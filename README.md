@@ -7,23 +7,25 @@ Running
 -----
 
 - Works best in latest Chrome, some versions of Firefox don't update at 60fps
-- Requires node, socket.io, coffee-script (install via npm)
-- On the server run node server.js to start the server
-- Then open up index.html in Chrome
-- To compile the client code run coffee -w -c cleint.coffee. This will watch the file for any updates and automatically compile to JavaScript
+- Requires node, express, socket.io, coffee-script (install via npm)
+- Install dependencies with: npm install
+- On the server run: node web.js to start the server
+- Then open up [http://localhost:3000/index.html](http://localhost:3000/index.html) in Chrome
+- To compile the client code run: coffee -w -c ./ public/ game/ This will watch the file for any updates and automatically compile to JavaScript
 - Keys: (left), (right) and (A) to jump. Hold down (A) to jump higher. 
 
 Todo
 -----
 
-- Use package files to list dependencies
 - Convert client code to use CoffeeScript classes
 - Provide way for client to specify which server to connect too
 - Send player input versus positions
 - Provide way to set player input update rate
 - Do all game logic on server
 - Latency compensation and interpolation
-- Host game static files using Node and Express (at the moment no web server)
+- ~~Use package files to list dependencies~~
+- ~~Host game static files using Node and Express (at the moment no web server)~~
+- ~~Convert server code to CoffeeScript~~
 - so so much more
 
 Libraries
@@ -34,6 +36,7 @@ Libraries
 - [Node](https://github.com/joyent/node)
 - [Socket.IO](https://github.com/LearnBoost/socket.io)
 - [CoffeeScript](https://github.com/jashkenas/coffee-script)
+- [Express](https://github.com/visionmedia/express)
 
 Contributions
 -----
