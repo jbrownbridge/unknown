@@ -1,4 +1,4 @@
-Attraction
+Attraction (alpha)
 =====
 
 A CoffeScript, HTML5 multiplayer puzzle platformer experiment. I am busy porting a puzzle platformer of mine to HTML5 and thought hey why not use CoffeeScript and then why not using Web Sockets and make it multiplayer. As the game stands multiple players can join a server and see the other players moving around a 2D map with tile collision detection. The client code has been converted to CoffeeScript using js2coffee and still needs a lot of porting to CoffeeScript classes. The server code is still in JavaScript. And the todo list goes on and on. See the section below for more details.
