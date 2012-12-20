@@ -3,6 +3,8 @@ Attraction (alpha)
 
 A CoffeScript, HTML5 multiplayer puzzle platformer experiment. I am busy porting a puzzle platformer of mine to HTML5 and thought hey why not use CoffeeScript and then why not using Web Sockets and make it multiplayer. As the game stands multiple players can join a server and see the other players moving around a 2D map with tile collision detection. The client code has been converted to CoffeeScript using js2coffee and still needs a lot of porting to CoffeeScript classes. The server code is still in JavaScript. And the todo list goes on and on. See the section below for more details.
 
+![screenshot](https://raw.github.com/SeanPackham/Attraction/master/public/images/Screen Shot 2012-12-20 at 2.58.17 PM.jpg)
+
 Running
 -----
 
@@ -17,6 +19,7 @@ Running
 Todo
 -----
 
+- Use Jade templates for client
 - Convert client code to use CoffeeScript classes
 - Provide way for client to specify which server to connect too
 - Send player input versus positions
