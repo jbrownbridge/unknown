@@ -11,6 +11,7 @@ Running
 - On the server run node server.js to start the server
 - Then open up index.html in Chrome
 - To compile the client code run coffee -w -c cleint.coffee. This will watch the file for any updates and automatically compile to JavaScript
+- Keys: (left), (right) and (A) to jump. Hold down (A) to jump higher. 
 
 Todo
 -----
