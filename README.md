@@ -29,6 +29,7 @@ Todo
 - ~~Host game static files using Node and Express (at the moment no web server)~~
 - ~~Convert server code to CoffeeScript~~
 - ~~Use Jade templates for client~~
+- ~~Provide way to specify server ip address on client~~
 - so so much more
 
 Libraries

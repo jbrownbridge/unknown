@@ -394,8 +394,9 @@ class Engine
   @fps = 0
   @frameTime = 1000 / 60
   @maxFrameTime = Math.round(Engine.frameTime * 3)
-  @remotePlayers = undefined
-  @multiplayer = undefined
+  @remotePlayers = []
+  @multiplayer = false
+  @serverIP = 0
 
 
   # tick game and network
@@ -439,20 +440,7 @@ class Engine
     level1 = ["###########", "#         #", "#  P      #", "#         #", "#      #  #", "#      #  #", "###    #  #", "#     ##  #", "#         #", "###########"]
     level2 = ["##########", "#        #", "#  ###   #", "#   ##   #", "# P     ##", "#      ###", "##########"]
     Engine.map = new Map(level2)
-    Engine.multiplayer = typeof io isnt "undefined"
-    
-    # Initialise socket connection
-    if Engine.multiplayer
-      Engine.socket = io.connect("http://localhost",
-        port: 8000
-        transports: ["websocket"]
-      )
-    
-    # Initialise remote players array
-    Engine.remotePlayers = []
-    
-    # Start listening for events
-    setEventHandlers() if Engine.multiplayer
+        
     Engine.run 0
 
     return
@@ -484,6 +472,20 @@ class Engine
 
 # game entry point
 $(document).ready ->
+
+  $('#connect').click ->
+    Engine.serverIP = $('#server').val()
+    console.log Engine.serverIP
+
+    Engine.socket = io.connect('http://' + Engine.serverIP,
+      port: 8000
+      transports: ["websocket"]
+    )    
+
+    Engine.remotePlayers = []
+    Engine.multiplayer = true
+    setEventHandlers()
+
   Engine.canvasWidth = 500
   Engine.canvasHeight = 400
 

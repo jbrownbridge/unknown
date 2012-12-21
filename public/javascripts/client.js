@@ -369,9 +369,11 @@
 
     Engine.maxFrameTime = Math.round(Engine.frameTime * 3);
 
-    Engine.remotePlayers = void 0;
+    Engine.remotePlayers = [];
 
-    Engine.multiplayer = void 0;
+    Engine.multiplayer = false;
+
+    Engine.serverIP = 0;
 
     Engine.tick = function(delta) {
       Engine.ticks++;
@@ -401,17 +403,6 @@
       level1 = ["###########", "#         #", "#  P      #", "#         #", "#      #  #", "#      #  #", "###    #  #", "#     ##  #", "#         #", "###########"];
       level2 = ["##########", "#        #", "#  ###   #", "#   ##   #", "# P     ##", "#      ###", "##########"];
       Engine.map = new Map(level2);
-      Engine.multiplayer = typeof io !== "undefined";
-      if (Engine.multiplayer) {
-        Engine.socket = io.connect("http://localhost", {
-          port: 8000,
-          transports: ["websocket"]
-        });
-      }
-      Engine.remotePlayers = [];
-      if (Engine.multiplayer) {
-        setEventHandlers();
-      }
       Engine.run(0);
     };
 
@@ -436,6 +427,17 @@
 
   $(document).ready(function() {
     var canvasJquery;
+    $('#connect').click(function() {
+      Engine.serverIP = $('#server').val();
+      console.log(Engine.serverIP);
+      Engine.socket = io.connect('http://' + Engine.serverIP, {
+        port: 8000,
+        transports: ["websocket"]
+      });
+      Engine.remotePlayers = [];
+      Engine.multiplayer = true;
+      return setEventHandlers();
+    });
     Engine.canvasWidth = 500;
     Engine.canvasHeight = 400;
     canvasJquery = $("<canvas width='" + Engine.canvasWidth + "' height='" + Engine.canvasHeight + "'></canvas>");
