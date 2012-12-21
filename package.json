@@ -1,13 +1,13 @@
 {
-  "name": "application-name",
+  "name": "Attraction",
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "node app"
+    "start": "node web"
   },
   "dependencies": {
+    "express": "3.x",
     "socket.io": "*",
-    "express": "3.0.0",
     "jade": "*"
   }
 }
