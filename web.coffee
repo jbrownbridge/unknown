@@ -2,7 +2,6 @@
 # web
 express = require("express")
 routes = require("./routes")
-user = require("./routes/user")
 http = require("http")
 path = require("path")
 
@@ -34,8 +33,6 @@ app.configure "development", ->
 
 
 app.get "/", routes.index
-
-app.get "/users", user.list
 
 
 http.createServer(app).listen app.get("port"), ->

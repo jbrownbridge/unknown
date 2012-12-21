@@ -19,7 +19,6 @@ Running
 Todo
 -----
 
-- Use Jade templates for client
 - Convert client code to use CoffeeScript classes
 - Provide way for client to specify which server to connect too
 - Send player input versus positions
@@ -29,6 +28,7 @@ Todo
 - ~~Use package files to list dependencies~~
 - ~~Host game static files using Node and Express (at the moment no web server)~~
 - ~~Convert server code to CoffeeScript~~
+- ~~Use Jade templates for client~~
 - so so much more
 
 Libraries
