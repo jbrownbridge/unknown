@@ -2,31 +2,18 @@
 (function() {
   var Player;
 
-  Player = function(startX, startY) {
-    var getX, getY, id, setX, setY, x, y;
-    x = startX;
-    y = startY;
-    id = void 0;
-    getX = function() {
-      return x;
-    };
-    getY = function() {
-      return y;
-    };
-    setX = function(newX) {
-      return x = newX;
-    };
-    setY = function(newY) {
-      return y = newY;
-    };
-    return {
-      getX: getX,
-      getY: getY,
-      setX: setX,
-      setY: setY,
-      id: id
-    };
-  };
+  Player = (function() {
+
+    Player.prototype.id = void 0;
+
+    function Player(x, y) {
+      this.x = x;
+      this.y = y;
+    }
+
+    return Player;
+
+  })();
 
   exports.Player = Player;
 

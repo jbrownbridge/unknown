@@ -36,54 +36,47 @@
       rAF wrapped, element
   else
     console.log "performance supported"
+  null
 )()
 
 
 
-# stores keystates
-Input = ->
-  that = this
-  @keys = new Array()
-  i = 0
-  while i < 100
-    @keys[i] = false
-    i++
+class Camera
+  constructor: (@x, @y) ->
 
 
-  # callback to update keystate
-  @update = (e) ->
-    that.keys[e.which] = false  if e.type is "keyup"
-    that.keys[e.which] = true  if e.type is "keydown"
+
+class Input
+  keys: [100]
+  update:(e) =>
+    @keys[e.which] = false if e.type is "keyup"
+    @keys[e.which] = true if e.type is "keydown"
     return
-  
-  return
-  # end of input
 
 
 
-# represents the player in the world
-# supports moving left, right and jumping
-Player = (startx, starty) ->
-  that = this
-  @id = 0
-  @x = startx
-  @y = starty
-  @newX = @x
-  @newY = @y
-  @dx = 0
-  @dy = 0
-  @runSpeed = 0.23
-  @jumpSpeed = 0.36
-  @airSpeed = 0.01
-  @gravity = 0.023
-  @width = 30
-  @height = 30
-  @jumping = false
-  @grounded = false
+class Player
+  id: 0
+  x: 0
+  y: 0
+  newX: 0
+  newY: 0
+  dx: 0
+  dy: 0
+  runSpeed: 0.23
+  jumpSpeed: 0.36
+  airSpeed: 0.01
+  gravity: 0.023
+  width: 30
+  height: 30
+  jumping: false
+  grounded: false
 
+  constructor: (@x, @y) ->
+    @newX = @x
+    @newY = @y
 
-  # handle input and calculate new positions
-  @tick = (delta) ->
+  tick: (delta) ->
     @grounded = Engine.map.entityGrounded(this)
     
     # left
@@ -111,9 +104,8 @@ Player = (startx, starty) ->
     @newY = @dy * delta
     return
 
-
   # draw player and some player stats
-  @render = (camera) ->
+  render: (camera) ->
     Engine.context.fillStyle = "rgb(255,0,0)"
     Engine.context.beginPath()
     Engine.context.rect -camera.x + @x, -camera.y + @y, @width, @height
@@ -128,65 +120,48 @@ Player = (startx, starty) ->
     Engine.context.fillText @jumping, 5, 30
     return
 
-  return
-  # end of player
 
 
+class Map
+  player: undefined
+  tileSize: 40
+  height: 0
+  width: 0
+  tiles: undefined
+  entities: []
+  camera: undefined
 
-# 2d map structure and collision code
-Map = (map) ->
-  that = this
-  @player
-  @tileSize = 40
-  @height = map.length
-  @width = map[0].length
-  @tiles = new Array(@width)
-  @entities = new Array()
-  @camera = new Camera(-(Engine.canvasWidth - @tileSize * @width) / 2, -(Engine.canvasHeight - @tileSize * @height) / 2)
-  
-  # tile init
-  # takes in string array and converts to int array
-  # can turn into more complex data structure of tile objects later
-  x = 0
+  constructor: (map) ->
+    @height = map.length
+    @width = map[0].length
+    @tiles = [@width]
+    @camera = new Camera(-(Engine.canvasWidth - @tileSize * @width) / 2, -(Engine.canvasHeight - @tileSize * @height) / 2)
+    x = 0
+    while x < @width
+      @tiles[x] = [@height]
+      y = 0
+      while y < @height        
+        if map[y].charAt(x) is "#"
+          @tiles[x][y] = 1        
+        else if map[y].charAt(x) is "P"
+          @player = new Player(x * @tileSize, y * @tileSize)
+          @entities.push @player
+        else
+          @tiles[x][y] = 0
+        y++
+      x++
 
-  while x < @width
-    @tiles[x] = new Array(@height)
-    y = 0
-
-    while y < @height
-      
-      # wall
-      if map[y].charAt(x) is "#"
-        @tiles[x][y] = 1
-      
-      # player
-      else if map[y].charAt(x) is "P"
-        @player = new Player(x * @tileSize, y * @tileSize)
-        @entities.push @player
-      
-      # emptyness
-      else
-        @tiles[x][y] = 0
-      y++
-    x++
-  
-
-  # update entities
-  @tick = (delta) ->
+  tick: (delta) ->
     i = 0
-
     while i < @entities.length
       @entities[i].tick delta
-      # x collision checks
       @moveEntity @entities[i], @entities[i].x + @entities[i].newX, @entities[i].y, 1
-      # y collision checks 
       @moveEntity @entities[i], @entities[i].x, @entities[i].y + @entities[i].newY, 0
       i++
     return
 
-
-  # move on one axis and check for entity collisions 
-  @moveEntity = (entity, newX, newY, type) ->
+  # type: 0 = y, 1 = x
+  moveEntity: (entity, newX, newY, type) ->
     xf = Math.min(entity.x, newX)
     xt = Math.max(entity.x, newX) + entity.width - 1
     yf = Math.min(entity.y, newY)
@@ -196,37 +171,21 @@ Map = (map) ->
     ys = Math.floor(yf / @tileSize)
     ye = Math.floor(yt / @tileSize)
     y = ys
-
     while y <= ye
       x = xs
-
       while x <= xe
         if @tiles[x][y] is 1
-          
-          # y collision
           if type is 0
-            
-            # down
             if entity.dy > 0
               entity.y = y * @tileSize - entity.height
               entity.grounded = true
-            
-            # up
             else entity.y = y * @tileSize + @tileSize  if entity.dy < 0
             entity.dy = 0
-          
-          # x collision
           else if type is 1
-            
-            # right
             if entity.dx > 0
               entity.x = x * @tileSize - entity.width
-            
-            # left
             else entity.x = x * @tileSize + @tileSize  if entity.dx < 0
             entity.dx = 0
-          
-          # we collided so get out of here
           return
         else
           entity.x = newX
@@ -235,32 +194,23 @@ Map = (map) ->
       y++
     return
 
-
-  # is the entity on a tile
-  @entityGrounded = (entity) ->
+  entityGrounded: (entity) ->
     xs = Math.floor(entity.x / @tileSize)
     xe = Math.floor((entity.x + entity.width - 1) / @tileSize)
-    ye = Math.floor((entity.y + entity.height + 1) / @tileSize)
-    
-    # bottom edge of map
+    ye = Math.floor((entity.y + entity.height + 1) / @tileSize)    
     return true  if ye > @height - 1
     x = xs
-
     while x <= xe
       return true  if @tiles[x][ye] is 1
       x++
     false
 
-
-  # render tiles and then loop through local and remote entities to render
-  @render = ->    
-    # tiles
+  render: ->
+    #tiles
     Engine.context.fillStyle = "rgb(0,0,0)"
     y = 0
-
     while y < @height
       x = 0
-
       while x < @width
         if @tiles[x][y] is 1
           Engine.context.beginPath()
@@ -268,109 +218,65 @@ Map = (map) ->
           Engine.context.closePath()
           Engine.context.fill()
         x++
-      y++
-    
+      y++    
     # local entities
     i = 0
-
     while i < @entities.length
       @entities[i].render @camera
-      i++
-    
+      i++    
     # remote entities
     i = 0
-
     while i < Engine.remotePlayers.length
       Engine.remotePlayers[i].render @camera
       i++
-
     return
 
-  return
-  # end of map
 
-
-
-# stores camera viewport to offest world by
-Camera = (x, y) ->
-  @x = x
-  @y = y
-  return
-  # end of camera
-
-
-
-# just networking for now
-setEventHandlers = ->
-  Engine.socket.on "connect", onSocketConnected
-  Engine.socket.on "disconnect", onSocketDisconnect
-  Engine.socket.on "new player", onNewPlayer
-  Engine.socket.on "move player", onMovePlayer
-  Engine.socket.on "remove player", onRemovePlayer
-  return
-
-
-# Socket connected
-onSocketConnected = ->
-  console.log "Connected to socket server"  
-  # Send local player data to the game server
-  Engine.socket.emit "new player",
-    x: Engine.map.player.x
-    y: Engine.map.player.y
-  return
-
-
-# Socket disconnected
-onSocketDisconnect = ->
-  console.log "Disconnected from socket server"
-  return
-
-
-# New player
-onNewPlayer = (data) ->
-  console.log "New player connected: " + data.id
-  # Initialise the new player
-  newPlayer = new Player(data.x, data.y)
-  newPlayer.id = data.id  
-  # Add new player to the remote players array
-  Engine.remotePlayers.push newPlayer
-  return
-
-
-# Move player
-onMovePlayer = (data) ->
-  movePlayer = playerById(data.id)
-  # Player not found
-  unless movePlayer
-    console.log "Player not found: " + data.id
+class NetworkClient
+  onSocketConnected: ->
+    console.log "connected to server"  
+    Engine.socket.emit "new player",
+      x: Engine.map.player.x
+      y: Engine.map.player.y
     return
-  # Update player position
-  movePlayer.x = data.x
-  movePlayer.y = data.y
-  return
 
-
-# Remove player
-onRemovePlayer = (data) ->
-  removePlayer = playerById(data.id)
-  # Player not found
-  unless removePlayer
-    console.log "Player not found: " + data.id
+  onSocketDisconnect: ->
+    console.log "disconnected from server"
     return
-  # Remove player from array
-  Engine.remotePlayers.splice Engine.remotePlayers.indexOf(removePlayer), 1
-  return
 
+  onNewPlayer: (data) ->
+    console.log "new player connected: " + data.id
+    player = new Player(data.x, data.y)
+    player.id = data.id  
+    Engine.remotePlayers.push player
+    return
 
-# Find player by ID
-playerById = (id) ->
-  i = undefined
-  i = 0
-  while i < Engine.remotePlayers.length
-    return Engine.remotePlayers[i]  if Engine.remotePlayers[i].id is id
-    i++
-  false
-  null
+  onMovePlayer: (data) ->
+    player = @playerById(data.id)
+    unless player
+      console.log "player not found: " + data.id
+      return
+    player.x = data.x
+    player.y = data.y
+    return
+
+  onRemovePlayer: (data) ->
+    removePlayer = @playerById(data.id)
+    unless removePlayer
+      console.log "Player not found: " + data.id
+      return
+    Engine.remotePlayers.splice Engine.remotePlayers.indexOf(removePlayer), 1
+    return
+
+  playerById: (id) ->
+    i = undefined
+    i = 0
+    while i < Engine.remotePlayers.length
+      return Engine.remotePlayers[i]  if Engine.remotePlayers[i].id is id
+      i++
+    false
+    null
+
 
 
 # the game engine
@@ -382,7 +288,7 @@ class Engine
   @canvasHeight = undefined
   @lastTime = 0
   @delta = 0
-  @input = new Input()
+  @input = new Input
   @map = undefined
   @camera = undefined
   @deltaSum = 0
@@ -396,7 +302,9 @@ class Engine
   @maxFrameTime = Math.round(Engine.frameTime * 3)
   @remotePlayers = []
   @multiplayer = false
+  @socket
   @serverIP = 0
+  @networkClient = new NetworkClient
 
 
   # tick game and network
@@ -434,15 +342,20 @@ class Engine
     
     return 
 
+  @setEventHandlers: ->
+    Engine.socket.on "connect", @networkClient.onSocketConnected
+    Engine.socket.on "disconnect", @networkClient.onSocketDisconnect
+    Engine.socket.on "new player", @networkClient.onNewPlayer
+    Engine.socket.on "move player", @networkClient.onMovePlayer
+    Engine.socket.on "remove player", @networkClient.onRemovePlayer
+    return
 
   # init engine with starting values and trugger animation frame callback
   @init: ->
     level1 = ["###########", "#         #", "#  P      #", "#         #", "#      #  #", "#      #  #", "###    #  #", "#     ##  #", "#         #", "###########"]
     level2 = ["##########", "#        #", "#  ###   #", "#   ##   #", "# P     ##", "#      ###", "##########"]
     Engine.map = new Map(level2)
-        
     Engine.run 0
-
     return
 
 
@@ -484,7 +397,7 @@ $(document).ready ->
 
     Engine.remotePlayers = []
     Engine.multiplayer = true
-    setEventHandlers()
+    Engeine.setEventHandlers()
 
   Engine.canvasWidth = 500
   Engine.canvasHeight = 400

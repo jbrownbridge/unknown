@@ -75,8 +75,8 @@
     newPlayer.id = this.id;
     this.broadcast.emit("new player", {
       id: newPlayer.id,
-      x: newPlayer.getX(),
-      y: newPlayer.getY()
+      x: newPlayer.x,
+      y: newPlayer.y
     });
     i = void 0;
     existingPlayer = void 0;
@@ -85,8 +85,8 @@
       existingPlayer = players[i];
       this.emit("new player", {
         id: existingPlayer.id,
-        x: existingPlayer.getX(),
-        y: existingPlayer.getY()
+        x: existingPlayer.x,
+        y: existingPlayer.y
       });
       i++;
     }
@@ -100,12 +100,12 @@
       util.log("Player not found: " + this.id);
       return;
     }
-    movePlayer.setX(data.x);
-    movePlayer.setY(data.y);
+    movePlayer.x = data.x;
+    movePlayer.y = data.y;
     return this.broadcast.emit("move player", {
       id: movePlayer.id,
-      x: movePlayer.getX(),
-      y: movePlayer.getY()
+      x: movePlayer.x,
+      y: movePlayer.y
     });
   };
 

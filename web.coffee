@@ -68,8 +68,8 @@ onNewPlayer = (data) ->
   newPlayer.id = @id
   @broadcast.emit "new player",
     id: newPlayer.id
-    x: newPlayer.getX()
-    y: newPlayer.getY()
+    x: newPlayer.x
+    y: newPlayer.y
 
   i = undefined
   existingPlayer = undefined
@@ -78,8 +78,8 @@ onNewPlayer = (data) ->
     existingPlayer = players[i]
     @emit "new player",
       id: existingPlayer.id
-      x: existingPlayer.getX()
-      y: existingPlayer.getY()
+      x: existingPlayer.x
+      y: existingPlayer.y
 
     i++
   players.push newPlayer
@@ -92,13 +92,13 @@ onMovePlayer = (data) ->
     util.log "Player not found: " + @id
     return
   
-  movePlayer.setX data.x
-  movePlayer.setY data.y
+  movePlayer.x = data.x
+  movePlayer.y = data.y
   
   @broadcast.emit "move player",
     id: movePlayer.id
-    x: movePlayer.getX()
-    y: movePlayer.getY()
+    x: movePlayer.x
+    y: movePlayer.y
 
 
 playerById = (id) ->
