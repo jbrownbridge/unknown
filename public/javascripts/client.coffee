@@ -357,9 +357,28 @@ class Engine
 
   # init engine with starting values and trugger animation frame callback
   @init: ->
-    level1 = ["###########", "#         #", "#  P      #", "#         #", "#      #  #", "#      #  #", "###    #  #", "#     ##  #", "#         #", "###########"]
-    level2 = ["##########", "#        #", "#  ###   #", "#   ##   #", "# P     ##", "#      ###", "##########"]
-    Engine.map = new Map(level2)
+    level1 = [
+      "###########", 
+      "#         #", 
+      "#  P      #", 
+      "#         #", 
+      "#      #  #", 
+      "#      #  #", 
+      "###    #  #", 
+      "#     ##  #", 
+      "#         #", 
+      "###########"
+    ]
+    level2 = [
+      "##########", 
+      "#        #", 
+      "#  ###   #", 
+      "#   ##   #", 
+      "# P     ##", 
+      "#      ###", 
+      "##########"
+    ]
+    Engine.map = new Map(level1)
     Engine.run 0
     return
 
