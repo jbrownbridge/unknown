@@ -117,11 +117,15 @@
 
     Player.prototype.grounded = false;
 
+    Player.prototype.image = void 0;
+
     function Player(x, y) {
       this.x = x;
       this.y = y;
       this.newX = this.x;
       this.newY = this.y;
+      this.image = new Image;
+      this.image.src = "/images/sprites/player_30.png";
     }
 
     Player.prototype.tick = function(delta) {
@@ -156,11 +160,14 @@
     };
 
     Player.prototype.render = function(camera) {
-      Engine.context.fillStyle = "rgb(255,0,0)";
-      Engine.context.beginPath();
-      Engine.context.rect(-camera.x + this.x, -camera.y + this.y, this.width, this.height);
-      Engine.context.closePath();
-      Engine.context.fill();
+      /*
+          Engine.context.fillStyle = "rgb(255,0,0)"
+          Engine.context.beginPath()
+          Engine.context.rect -camera.x + @x, -camera.y + @y, @width, @height
+          Engine.context.closePath()
+          Engine.context.fill()
+      */
+      Engine.context.drawImage(this.image, -camera.x + this.x, -camera.y + this.y);
       Engine.context.fillStyle = "blue";
       Engine.context.font = "bold 12px Arial";
       Engine.context.fillText(this.grounded, 5, 15);

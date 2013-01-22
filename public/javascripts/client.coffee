@@ -71,10 +71,13 @@ class Player
   height: 30
   jumping: false
   grounded: false
+  image: undefined
 
   constructor: (@x, @y) ->
     @newX = @x
     @newY = @y
+    @image = new Image
+    @image.src = "/images/sprites/player_30.png"
 
   tick: (delta) ->
     @grounded = Engine.map.entityGrounded(this)
@@ -106,12 +109,14 @@ class Player
 
   # draw player and some player stats
   render: (camera) ->
+    ###
     Engine.context.fillStyle = "rgb(255,0,0)"
     Engine.context.beginPath()
     Engine.context.rect -camera.x + @x, -camera.y + @y, @width, @height
     Engine.context.closePath()
     Engine.context.fill()
-
+    ###
+    Engine.context.drawImage @image, -camera.x + @x, -camera.y + @y
     Engine.context.fillStyle = "blue"
     Engine.context.font = "bold 12px Arial"
     Engine.context.fillText @grounded, 5, 15

@@ -24,6 +24,7 @@ Todo
 - Do all game logic on server
 - Latency compensation and interpolation
 - so so much more
+- ~~Rendering the player using an image~~
 - ~~Convert client code to use CoffeeScript classes~~
 - ~~Provide way for client to specify which server to connect too~~
 - ~~Use package files to list dependencies~~
