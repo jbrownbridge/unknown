@@ -19,18 +19,18 @@ Running
 Todo
 -----
 
-- Convert client code to use CoffeeScript classes
-- Provide way for client to specify which server to connect too
 - Send player input versus positions
 - Provide way to set player input update rate
 - Do all game logic on server
 - Latency compensation and interpolation
+- so so much more
+- ~~Convert client code to use CoffeeScript classes~~
+- ~~Provide way for client to specify which server to connect too~~
 - ~~Use package files to list dependencies~~
 - ~~Host game static files using Node and Express (at the moment no web server)~~
 - ~~Convert server code to CoffeeScript~~
 - ~~Use Jade templates for client~~
 - ~~Provide way to specify server ip address on client~~
-- so so much more
 
 Libraries
 -----
