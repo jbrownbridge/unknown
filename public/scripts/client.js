@@ -130,41 +130,45 @@
 
     Player.prototype.tick = function(delta) {
       this.grounded = Engine.map.entityGrounded(this);
-      if (Engine.input.keys[37]) {
+      if (Engine.input.keys[65]) {
         this.dx = -0.23;
-      } else if (Engine.input.keys[39]) {
+      } else if (Engine.input.keys[68]) {
         this.dx = 0.23;
       } else {
         this.dx = 0;
       }
-      if (Engine.input.keys[65] && this.grounded) {
-        this.grounded = false;
-        this.jumping = true;
-        this.dy -= this.jumpSpeed;
+      if (Engine.input.keys[87]) {
+        this.dy = -0.23;
+      } else if (Engine.input.keys[83]) {
+        this.dy = +0.23;
       } else {
-        if (!Engine.input.keys[65]) {
-          this.jumping = false;
-        }
+        this.dy = 0;
       }
-      if (this.jumping) {
-        this.dy -= this.airSpeed;
-        if (this.dy > 0) {
-          this.jumping = false;
-        }
-      }
-      if (!this.grounded) {
-        this.dy += this.gravity;
-      }
+      /*
+          # jump
+          if Engine.input.keys[65] and @grounded
+            @grounded = false
+            @jumping = true
+            @dy -= @jumpSpeed
+          else @jumping = false  unless Engine.input.keys[65]
+          if @jumping
+            @dy -= @airSpeed
+            @jumping = false  if @dy > 0
+      */
+
       this.newX = this.dx * delta;
       this.newY = this.dy * delta;
     };
 
     Player.prototype.render = function(camera) {
-      Engine.context.fillStyle = "rgb(255,0,0)";
-      Engine.context.beginPath();
-      Engine.context.rect(-camera.x + this.x, -camera.y + this.y, this.width, this.height);
-      Engine.context.closePath();
-      Engine.context.fill();
+      /*
+          Engine.context.fillStyle = "rgb(255,0,0)"
+          Engine.context.beginPath()
+          Engine.context.rect -camera.x + @x, -camera.y + @y, @width, @height
+          Engine.context.closePath()
+          Engine.context.fill()
+      */
+      Engine.context.drawImage(this.image, -camera.x + this.x, -camera.y + this.y);
       Engine.context.fillStyle = "blue";
       Engine.context.font = "bold 12px Arial";
       Engine.context.fillText(this.grounded, 5, 15);
@@ -328,7 +332,18 @@
 
   NetworkClient = (function() {
 
-    function NetworkClient() {}
+    function NetworkClient() {
+      this.onRemovePlayer = __bind(this.onRemovePlayer, this);
+
+      this.onMovePlayer = __bind(this.onMovePlayer, this);
+
+      this.onNewPlayer = __bind(this.onNewPlayer, this);
+
+      this.onSocketDisconnect = __bind(this.onSocketDisconnect, this);
+
+      this.onSocketConnected = __bind(this.onSocketConnected, this);
+
+    }
 
     NetworkClient.prototype.onSocketConnected = function() {
       console.log("connected to server");
@@ -508,7 +523,7 @@
       });
       Engine.remotePlayers = [];
       Engine.multiplayer = true;
-      return Engeine.setEventHandlers();
+      return Engine.setEventHandlers();
     });
     Engine.canvasWidth = 400;
     Engine.canvasHeight = 400;
