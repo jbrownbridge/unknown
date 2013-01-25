@@ -1,4 +1,4 @@
 
 exports.index = (req, res) ->
-  res.render "index",
-    title: "Attraction (alpha)"
+  res.render 'index',
+    title: 'ggj13'

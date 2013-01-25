@@ -12,16 +12,6 @@
 
   app = express();
 
-  util = require("util");
-
-  io = require("socket.io");
-
-  Player = require("./game/player").Player;
-
-  socket = void 0;
-
-  players = void 0;
-
   app.configure(function() {
     app.set("port", process.env.PORT || 3000);
     app.set("views", __dirname + "/views");
@@ -43,6 +33,16 @@
   http.createServer(app).listen(app.get("port"), function() {
     return console.log("Express server listening on port " + app.get("port"));
   });
+
+  util = require("util");
+
+  io = require("socket.io");
+
+  Player = require("./game/player").Player;
+
+  socket = void 0;
+
+  players = void 0;
 
   setEventHandlers = function() {
     return socket.sockets.on("connection", onSocketConnection);

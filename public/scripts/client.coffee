@@ -109,14 +109,14 @@ class Player
 
   # draw player and some player stats
   render: (camera) ->
-    ###
+    
     Engine.context.fillStyle = "rgb(255,0,0)"
     Engine.context.beginPath()
     Engine.context.rect -camera.x + @x, -camera.y + @y, @width, @height
     Engine.context.closePath()
     Engine.context.fill()
-    ###
-    Engine.context.drawImage @image, -camera.x + @x, -camera.y + @y
+    
+    #Engine.context.drawImage @image, -camera.x + @x, -camera.y + @y
     Engine.context.fillStyle = "blue"
     Engine.context.font = "bold 12px Arial"
     Engine.context.fillText @grounded, 5, 15
@@ -378,7 +378,7 @@ class Engine
       "#      ###", 
       "##########"
     ]
-    Engine.map = new Map(level1)
+    Engine.map = new Map(level2)
     Engine.run 0
     return
 
@@ -423,21 +423,37 @@ $(document).ready ->
     Engine.multiplayer = true
     Engeine.setEventHandlers()
 
-  Engine.canvasWidth = 500
+  Engine.canvasWidth = 400
   Engine.canvasHeight = 400
 
-  canvasJquery = $("<canvas width='" + Engine.canvasWidth + "' height='" + Engine.canvasHeight + "'></canvas>")
+  canvasJquery = $("<canvas id='canvas' width='" + Engine.canvasWidth + "' height='" + Engine.canvasHeight + "'></canvas>")
   
   Engine.canvas = canvasJquery.get(0)
   Engine.context = Engine.canvas.getContext("2d")
   
   canvasJquery.appendTo "body"
 
+  canvas = $('#canvas')
+
+  console.log canvas[0].offsetLeft
+  console.log canvas[0].offsetTop
+
   Engine.init()
   
   # key events
   $(document).bind "keydown", Engine.input.update
   $(document).bind "keyup", Engine.input.update
+
+  $(document).bind "click", (e) ->
+    console.log "click " + e.clientX + " " + e.clientY
+
+  $(document).bind "mousedown", (e) ->
+    console.log "mousedown " + e.clientX + " " + e.clientY
+
+  $(document).bind "mouseup", (e) ->
+    console.log "mouseup " + e.clientX + " " + e.clientY
+
+
   return
 
 

@@ -2,8 +2,8 @@
 (function() {
 
   exports.index = function(req, res) {
-    return res.render("index", {
-      title: "Attraction (alpha)"
+    return res.render('index', {
+      title: 'ggj13'
     });
   };
 

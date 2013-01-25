@@ -1,4 +1,5 @@
 
+
 # web
 express = require("express")
 routes = require("./routes")
@@ -6,16 +7,6 @@ http = require("http")
 path = require("path")
 
 app = express()
-
-# game
-util = require("util")
-io = require("socket.io")
-Player = require("./game/player").Player
-
-# game local
-socket = undefined
-players = undefined
-
 
 app.configure ->
   app.set "port", process.env.PORT or 3000
@@ -31,15 +22,21 @@ app.configure ->
 app.configure "development", ->
   app.use express.errorHandler()
 
-
 app.get "/", routes.index
-
 
 http.createServer(app).listen app.get("port"), ->
   console.log "Express server listening on port " + app.get("port")
 
 
-# game code need to move to own file
+  
+# game
+util = require("util")
+io = require("socket.io")
+Player = require("./game/player").Player
+
+# game local
+socket = undefined
+players = undefined
 
 
 setEventHandlers = ->

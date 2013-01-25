@@ -160,14 +160,11 @@
     };
 
     Player.prototype.render = function(camera) {
-      /*
-          Engine.context.fillStyle = "rgb(255,0,0)"
-          Engine.context.beginPath()
-          Engine.context.rect -camera.x + @x, -camera.y + @y, @width, @height
-          Engine.context.closePath()
-          Engine.context.fill()
-      */
-      Engine.context.drawImage(this.image, -camera.x + this.x, -camera.y + this.y);
+      Engine.context.fillStyle = "rgb(255,0,0)";
+      Engine.context.beginPath();
+      Engine.context.rect(-camera.x + this.x, -camera.y + this.y, this.width, this.height);
+      Engine.context.closePath();
+      Engine.context.fill();
       Engine.context.fillStyle = "blue";
       Engine.context.font = "bold 12px Arial";
       Engine.context.fillText(this.grounded, 5, 15);
@@ -477,7 +474,7 @@
       var level1, level2;
       level1 = ["###########", "#         #", "#  P      #", "#         #", "#      #  #", "#      #  #", "###    #  #", "#     ##  #", "#         #", "###########"];
       level2 = ["##########", "#        #", "#  ###   #", "#   ##   #", "# P     ##", "#      ###", "##########"];
-      Engine.map = new Map(level1);
+      Engine.map = new Map(level2);
       Engine.run(0);
     };
 
@@ -501,7 +498,7 @@
   })();
 
   $(document).ready(function() {
-    var canvasJquery;
+    var canvas, canvasJquery;
     $('#connect').click(function() {
       Engine.serverIP = $('#server').val();
       console.log(Engine.serverIP);
@@ -513,15 +510,27 @@
       Engine.multiplayer = true;
       return Engeine.setEventHandlers();
     });
-    Engine.canvasWidth = 500;
+    Engine.canvasWidth = 400;
     Engine.canvasHeight = 400;
-    canvasJquery = $("<canvas width='" + Engine.canvasWidth + "' height='" + Engine.canvasHeight + "'></canvas>");
+    canvasJquery = $("<canvas id='canvas' width='" + Engine.canvasWidth + "' height='" + Engine.canvasHeight + "'></canvas>");
     Engine.canvas = canvasJquery.get(0);
     Engine.context = Engine.canvas.getContext("2d");
     canvasJquery.appendTo("body");
+    canvas = $('#canvas');
+    console.log(canvas[0].offsetLeft);
+    console.log(canvas[0].offsetTop);
     Engine.init();
     $(document).bind("keydown", Engine.input.update);
     $(document).bind("keyup", Engine.input.update);
+    $(document).bind("click", function(e) {
+      return console.log("click " + e.clientX + " " + e.clientY);
+    });
+    $(document).bind("mousedown", function(e) {
+      return console.log("mousedown " + e.clientX + " " + e.clientY);
+    });
+    $(document).bind("mouseup", function(e) {
+      return console.log("mouseup " + e.clientX + " " + e.clientY);
+    });
   });
 
 }).call(this);
