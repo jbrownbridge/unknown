@@ -83,14 +83,24 @@ class Player
     @grounded = Engine.map.entityGrounded(this)
     
     # left
-    if Engine.input.keys[37]
+    if Engine.input.keys[65]
       @dx = -0.23
     # right
-    else if Engine.input.keys[39]
+    else if Engine.input.keys[68]
       @dx = 0.23
     else
       @dx = 0
 
+    # up
+    if Engine.input.keys[87]
+      @dy = -0.23
+    # right
+    else if Engine.input.keys[83]
+      @dy = +0.23
+    else
+      @dy = 0
+
+    ###
     # jump
     if Engine.input.keys[65] and @grounded
       @grounded = false
@@ -100,23 +110,24 @@ class Player
     if @jumping
       @dy -= @airSpeed
       @jumping = false  if @dy > 0
-    
+    ###
+
     # in air
-    @dy += @gravity unless @grounded
+    # @dy += @gravity unless @grounded
     @newX = @dx * delta
     @newY = @dy * delta
     return
 
   # draw player and some player stats
   render: (camera) ->
-    
+    ###
     Engine.context.fillStyle = "rgb(255,0,0)"
     Engine.context.beginPath()
     Engine.context.rect -camera.x + @x, -camera.y + @y, @width, @height
     Engine.context.closePath()
     Engine.context.fill()
-    
-    #Engine.context.drawImage @image, -camera.x + @x, -camera.y + @y
+    ###
+    Engine.context.drawImage @image, -camera.x + @x, -camera.y + @y
     Engine.context.fillStyle = "blue"
     Engine.context.font = "bold 12px Arial"
     Engine.context.fillText @grounded, 5, 15
