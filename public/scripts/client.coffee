@@ -409,19 +409,14 @@ class Engine
 
 # game entry point
 $(document).ready ->
+  Engine.socket = io.connect($(document).url,
+    port: 8000
+    transports: ["websocket"]
+  )
 
-  $('#connect').click ->
-    Engine.serverIP = $('#server').val()
-    console.log Engine.serverIP
-
-    Engine.socket = io.connect('http://' + Engine.serverIP,
-      port: 8000
-      transports: ["websocket"]
-    )    
-
-    Engine.remotePlayers = []
-    Engine.multiplayer = true
-    Engine.setEventHandlers()
+  Engine.remotePlayers = []
+  Engine.multiplayer = true
+  Engine.setEventHandlers()
 
   Engine.canvasWidth = 400
   Engine.canvasHeight = 400

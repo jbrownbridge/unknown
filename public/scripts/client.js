@@ -328,7 +328,18 @@
 
   NetworkClient = (function() {
 
-    function NetworkClient() {}
+    function NetworkClient() {
+      this.onRemovePlayer = __bind(this.onRemovePlayer, this);
+
+      this.onMovePlayer = __bind(this.onMovePlayer, this);
+
+      this.onNewPlayer = __bind(this.onNewPlayer, this);
+
+      this.onSocketDisconnect = __bind(this.onSocketDisconnect, this);
+
+      this.onSocketConnected = __bind(this.onSocketConnected, this);
+
+    }
 
     NetworkClient.prototype.onSocketConnected = function() {
       console.log("connected to server");
@@ -499,17 +510,13 @@
 
   $(document).ready(function() {
     var canvas, canvasJquery;
-    $('#connect').click(function() {
-      Engine.serverIP = $('#server').val();
-      console.log(Engine.serverIP);
-      Engine.socket = io.connect('http://' + Engine.serverIP, {
-        port: 8000,
-        transports: ["websocket"]
-      });
-      Engine.remotePlayers = [];
-      Engine.multiplayer = true;
-      return Engeine.setEventHandlers();
+    Engine.socket = io.connect($(document).url, {
+      port: 8000,
+      transports: ["websocket"]
     });
+    Engine.remotePlayers = [];
+    Engine.multiplayer = true;
+    Engine.setEventHandlers();
     Engine.canvasWidth = 400;
     Engine.canvasHeight = 400;
     canvasJquery = $("<canvas id='canvas' width='" + Engine.canvasWidth + "' height='" + Engine.canvasHeight + "'></canvas>");
