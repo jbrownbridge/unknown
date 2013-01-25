@@ -1,2 +1,6 @@
 .DS_Store
 node_modules/
+public/scripts/client.js
+game/*.js
+routes/index.js
+web.js
