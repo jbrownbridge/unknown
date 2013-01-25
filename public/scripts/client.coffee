@@ -238,25 +238,25 @@ class Map
 
 
 class NetworkClient
-  onSocketConnected: ->
+  onSocketConnected: =>
     console.log "connected to server"  
     Engine.socket.emit "new player",
       x: Engine.map.player.x
       y: Engine.map.player.y
     return
 
-  onSocketDisconnect: ->
+  onSocketDisconnect: =>
     console.log "disconnected from server"
     return
 
-  onNewPlayer: (data) ->
+  onNewPlayer: (data) =>
     console.log "new player connected: " + data.id
     player = new Player(data.x, data.y)
     player.id = data.id  
     Engine.remotePlayers.push player
     return
 
-  onMovePlayer: (data) ->
+  onMovePlayer: (data) =>
     player = @playerById(data.id)
     unless player
       console.log "player not found: " + data.id
@@ -265,7 +265,7 @@ class NetworkClient
     player.y = data.y
     return
 
-  onRemovePlayer: (data) ->
+  onRemovePlayer: (data) =>
     removePlayer = @playerById(data.id)
     unless removePlayer
       console.log "Player not found: " + data.id
@@ -421,7 +421,7 @@ $(document).ready ->
 
     Engine.remotePlayers = []
     Engine.multiplayer = true
-    Engeine.setEventHandlers()
+    Engine.setEventHandlers()
 
   Engine.canvasWidth = 400
   Engine.canvasHeight = 400
