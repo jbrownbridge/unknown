@@ -98,8 +98,8 @@ class Bullet extends Entity
   constructor: (@bulletType, @x, @y, @angle, @speed, network) ->
 
     # if bullets disappear is because colliding with entity
-    @x += 15 * Math.sin(@angle - 36.1)
-    @y += 15 * Math.cos(@angle - 36.1)
+    @x += 20 * Math.sin(@angle - 36.1)
+    @y += 20 * Math.cos(@angle - 36.1)
 
     @type = Entity.types.Bullet
     unless network
@@ -110,7 +110,7 @@ class Bullet extends Entity
         bulletType: @bulletType
       
   render: (camera) ->
-    Engine.context.fillStyle = "rgb(255,0,0)"
+    Engine.context.fillStyle = "rgb(220,220,220)"
     Engine.context.beginPath()
     Engine.context.rect -camera.x + @x, -camera.y + @y, @width, @height
     Engine.context.closePath()
@@ -169,7 +169,7 @@ class Player extends Entity
   newY: 0
   dx: 0
   dy: 0
-  runSpeed: 0.23
+  runSpeed: 0.275
   width: 36
   height: 36
   image: undefined
@@ -209,23 +209,23 @@ class Player extends Entity
 
     # left
     if Engine.input.keys[65]
-      @dx = -0.23
+      @dx = -@runSpeed
     # right
     else if Engine.input.keys[68]
-      @dx = 0.23
+      @dx = @runSpeed
     else
       @dx = 0
 
     # up
     if Engine.input.keys[87]
-      @dy = -0.23
+      @dy = -@runSpeed
     # right
     else if Engine.input.keys[83]
-      @dy = +0.23
+      @dy = @runSpeed
     else
       @dy = 0
 
-    #if Engine.input.keys[80] 
+    #if Engine.input.keys[80]  
 
     @gun.tick()
 
@@ -261,14 +261,78 @@ class Player extends Entity
 
 class Map
   player: undefined
-  tileSize: 50
+  tileSize: 64
   height: 0
   width: 0
   tiles: undefined
   entities: []
   camera: undefined
+  @tileTypes: {
+    WALL: 1,
+    GROUND_DIRT_1: 21,
+    GROUND_DIRT_2: 22,
+    GROUND_DIRT_3: 23,
+    GROUND_DIRT_4: 24,
+    GROUND_GRASS_1: 31,
+    GROUND_GRASS_2: 32,
+    GROUND_GRASS_3: 33,
+    GROUND_GRASS_4: 34,
+    GROUND_CLAY_1: 41,
+    GROUND_CLAY_2: 42,
+    GROUND_CLAY_3: 43,
+    GROUND_CLAY_4: 44,
+    GROUND_SAND_1: 51,
+    GROUND_SAND_2: 52,
+    GROUND_SAND_3: 53,
+    GROUND_SAND_4: 54,
+    DOOR_SINGLE: 6,
+    DOOR_DOUBLE: 7,
+    CHEST: 8,
+    SPAWN: 9,
+    PLAYER: 10
+  }
+  @tileImages: []
 
   constructor: (map) ->
+
+    Map.tileImages[Map.tileTypes.GROUND_DIRT_1] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_DIRT_1].src = "/images/tiles/Dirt1.bmp"
+    Map.tileImages[Map.tileTypes.GROUND_DIRT_2] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_DIRT_2].src = "/images/tiles/Dirt2.bmp"
+    Map.tileImages[Map.tileTypes.GROUND_DIRT_3] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_DIRT_3].src = "/images/tiles/Dirt3.bmp"
+    Map.tileImages[Map.tileTypes.GROUND_DIRT_4] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_DIRT_4].src = "/images/tiles/Dirt4.bmp"
+
+    Map.tileImages[Map.tileTypes.GROUND_GRASS_1] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_GRASS_1].src = "/images/tiles/Grass1.bmp"
+    Map.tileImages[Map.tileTypes.GROUND_GRASS_2] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_GRASS_2].src = "/images/tiles/Grass2.bmp"
+    Map.tileImages[Map.tileTypes.GROUND_GRASS_3] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_GRASS_3].src = "/images/tiles/Grass3.bmp"
+    Map.tileImages[Map.tileTypes.GROUND_GRASS_4] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_GRASS_4].src = "/images/tiles/Grass4.bmp"
+
+    Map.tileImages[Map.tileTypes.GROUND_CLAY_1] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_CLAY_1].src = "/images/tiles/RedClay1.bmp"
+    Map.tileImages[Map.tileTypes.GROUND_CLAY_2] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_CLAY_2].src = "/images/tiles/RedClay2.bmp"
+    Map.tileImages[Map.tileTypes.GROUND_CLAY_3] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_CLAY_3].src = "/images/tiles/RedClay3.bmp"
+    Map.tileImages[Map.tileTypes.GROUND_CLAY_4] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_CLAY_4].src = "/images/tiles/RedClay4.bmp"
+
+    Map.tileImages[Map.tileTypes.GROUND_SAND_1] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_SAND_1].src = "/images/tiles/Sand1.bmp"
+    Map.tileImages[Map.tileTypes.GROUND_SAND_2] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_SAND_2].src = "/images/tiles/Sand2.bmp"
+    Map.tileImages[Map.tileTypes.GROUND_SAND_3] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_SAND_3].src = "/images/tiles/Sand3.bmp"
+    Map.tileImages[Map.tileTypes.GROUND_SAND_4] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_SAND_4].src = "/images/tiles/Sand4.bmp"
+
+    console.log Map.tileTypes.GROUND_SAND_1
+
     @height = map.length
     @width = map[0].length
     @tiles = [@width]
@@ -279,12 +343,33 @@ class Map
       y = 0
       while y < @height        
         if map[y].charAt(x) is "#"
-          @tiles[x][y] = 1        
+          @tiles[x][y] = Map.tileTypes.WALL 
+        else if map[y].charAt(x) is " "
+          index = Math.floor((Math.random()*4)+1)
+          @tiles[x][y] = 20 + index
+        else if map[y].charAt(x) is "^"
+          index = Math.floor((Math.random()*4)+1)
+          @tiles[x][y] = 30 + index
+        else if map[y].charAt(x) is "+"
+          index = Math.floor((Math.random()*4)+1)
+          @tiles[x][y] = 40 + index
+        else if map[y].charAt(x) is "$"
+          index = Math.floor((Math.random()*4)+1)
+          @tiles[x][y] = 50 + index
+        else if map[y].charAt(x) is "}"
+          @tiles[x][y] = Map.tileTypes.DOOR_SINGLE
+        else if map[y].charAt(x) is "]"
+          @tiles[x][y] = Map.tileTypes.DOOR_DOUBLE
+        else if map[y].charAt(x) is "C"
+          @tiles[x][y] = Map.tileTypes.CHEST
+        else if map[y].charAt(x) is "K"
+          @tiles[x][y] = Map.tileTypes.SPAWN
+
         else if map[y].charAt(x) is "P"
           @player = new Player(x * @tileSize, y * @tileSize)
           @entities.push @player
         else
-          @tiles[x][y] = 0
+          console.log 'unkonwn tile type at ' + x + ', ' + y
         y++
       x++
 
@@ -359,17 +444,59 @@ class Map
     return
 
   render: ->
+
     #tiles
+    
     Engine.context.fillStyle = "rgb(0,0,0)"
-    y = 0
-    while y < @height
-      x = 0
-      while x < @width
-        if @tiles[x][y] is 1
-          Engine.context.beginPath()
-          Engine.context.rect -@camera.x + x * @tileSize, -@camera.y + y * @tileSize, @tileSize, @tileSize
-          Engine.context.closePath()
-          Engine.context.fill()
+    y = Math.floor(@camera.y / @tileSize)
+    while y < (@camera.y + Engine.canvasHeight) / @tileSize
+      x = Math.floor(@camera.x / @tileSize)
+      while x < (@camera.x + Engine.canvasWidth) / @tileSize
+        tx = -@camera.x + x * @tileSize
+        ty = - @camera.y + y * @tileSize
+
+        switch @tiles[x][y]
+          when Map.tileTypes.WALL
+            Engine.context.beginPath()
+            Engine.context.rect tx, ty, @tileSize, @tileSize
+            Engine.context.closePath()
+            Engine.context.fill()
+          when Map.tileTypes.GROUND_DIRT_1
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_1], tx, ty
+          when Map.tileTypes.GROUND_DIRT_2
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_2], tx, ty
+          when Map.tileTypes.GROUND_DIRT_3
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_3], tx, ty
+          when Map.tileTypes.GROUND_DIRT_4
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_4], tx, ty
+
+          when Map.tileTypes.GROUND_GRASS_1
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_1], tx, ty
+          when Map.tileTypes.GROUND_GRASS_2
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_2], tx, ty
+          when Map.tileTypes.GROUND_GRASS_3
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_3], tx, ty
+          when Map.tileTypes.GROUND_GRASS_4
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_4], tx, ty
+
+          when Map.tileTypes.GROUND_CLAY_1
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_1], tx, ty
+          when Map.tileTypes.GROUND_CLAY_2
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_2], tx, ty
+          when Map.tileTypes.GROUND_CLAY_3
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_3], tx, ty
+          when Map.tileTypes.GROUND_CLAY_4
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_4], tx, ty
+
+          when Map.tileTypes.GROUND_SAND_1
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_1], tx, ty
+          when Map.tileTypes.GROUND_SAND_2
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_2], tx, ty
+          when Map.tileTypes.GROUND_SAND_3
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_3], tx, ty
+          when Map.tileTypes.GROUND_SAND_4
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_4], tx, ty
+
         x++
       y++    
     # local entities
@@ -521,6 +648,7 @@ class Engine
     #Engine.context.fillText "angle: " + (Engine.map.player.angle * 180 / Math.PI).toFixed(2), 5, 15
     Engine.context.fillText "players: " + (Engine.remotePlayers.length + 1), 5, 15
     Engine.context.fillText "alive: " + Engine.alivePlayers, 5, 30
+    Engine.context.fillText "camera: " + Math.round(Engine.map.camera.x) + ", " + Math.round(Engine.map.camera.y), 5, 45
 
     return 
 
@@ -577,7 +705,7 @@ class Engine
       "#      ###", 
       "##########"
     ]
-    Engine.map = new Map(level1)
+    Engine.map = new Map(window.map)
     Engine.run 0
     return
 
