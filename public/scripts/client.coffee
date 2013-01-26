@@ -228,13 +228,14 @@ class Player extends Entity
     return
 
   damage: (amount) ->
-    @health -= amount
-    if @health < 0
+    if @health <= 0
       @killPlayer()
       Engine.socket.emit 'player dead',
         id: @id
         x: @x
         y: @y
+    else
+      @health -= amount
     return
 
   tick: (delta, camera) ->
@@ -288,7 +289,7 @@ class Player extends Entity
     Engine.context.translate x + @width/2, y + @height/2
     Engine.context.rotate -angle
     Engine.context.drawImage @image, -@width/2, -@height/2
-    Engine.context.restore();
+    Engine.context.restore()
 
   render: (camera) ->
     @drawRotatedImage -camera.x + @x, -camera.y + @y, @angle
@@ -535,15 +536,33 @@ class Map
 
   renderFog: ->
     @ctx.save()
-    @ctx.globalCompositeOperation = "source-over"
+    @ctx.globalcompositeoperation = "source-over"
     @darkmask.render(@ctx)
     @ctx.restore()
+
+
+  renderHUD: ->
+    width = 250
+    height = 15
+    x = @ctx.canvas.width/2 - width/2
+    y = height/2 + 2
+
+    @ctx.beginPath()
+    @ctx.rect(x, y, Math.round(width * @player.health / 100.0), height)
+    @ctx.fillStyle = "red"
+    @ctx.fill()
+    @ctx.closePath()
+
+    @ctx.beginPath()
+    @ctx.rect(x, y, width, height)
+    @ctx.strokeStyle = "gray"
+    @ctx.stroke()
+    @ctx.closePath()
 
   render: ->
     @useLighting and @updateIlluminatedScene()
     @ctx.save()
     @ctx.clearRect(0, 0, @ctx.canvas.width, @ctx.canvas.height)
- 
     #tiles
     Engine.context.fillStyle = "rgb(0,0,0)"
     y = Math.floor(@camera.y / @tileSize)
@@ -612,6 +631,7 @@ class Map
       Engine.remotePlayers[i].render @camera
       i++
     @useLighting and @renderFog()
+    @renderHUD()
     @ctx.restore()
     return
 
