@@ -96,7 +96,12 @@ class Bullet extends Entity
   speed: 1
   bulletType: -1
   constructor: (@bulletType, @x, @y, @angle, @speed, network) ->
-    @type = Player.types.Bullet
+
+    # if bullets disappear is because colliding with entity
+    @x += 15 * Math.sin(@angle - 36.1)
+    @y += 15 * Math.cos(@angle - 36.1)
+
+    @type = Entity.types.Bullet
     unless network
       Engine.sendNetworkPacket 'new bullet',
         x: @x
@@ -110,6 +115,7 @@ class Bullet extends Entity
     Engine.context.rect -camera.x + @x, -camera.y + @y, @width, @height
     Engine.context.closePath()
     Engine.context.fill()
+    return
   tick: (delta, camera) ->
     @dx = @speed * Math.sin(@angle - 36.1)
     @dy = @speed * Math.cos(@angle - 36.1)
@@ -117,7 +123,7 @@ class Bullet extends Entity
     @newY = @dy * delta
     return
   collideWithTile: (cx, cy) ->
-    Engine.map.entities.splice Engine.map.entities.indexOf(@), 1
+    Engine.map.removeEntity @
     return
 
 
@@ -128,27 +134,28 @@ class Gun
   bullets: -1
   type: -1
   ticks: 0
+  damage: 0
   automatic: false
   @types: {
     PewPewGun: 1,
     MachineGun: 2,
     RocketLauncher: 3
   }
-  constructor: (@type, @fireRate, @bulletSpeed, @bullets, @automatic) ->
+  constructor: (@type, @fireRate, @bulletSpeed, @bullets, @automatic, @damage) ->
   tick: ->
     @ticks++
     return
   canFire: ->
     @ticks > @fireRate
   fire: (x, y, angle, network) ->
-    Engine.map.entities.push new Bullet @type, x, y, angle, @bulletSpeed, network
+    Engine.map.entities.push (new Bullet @type, x, y, angle, @bulletSpeed, network)
     @ticks = 0
     return
 
 
 class PewPewGun extends Gun
   constructor: () ->
-    super Gun.types.PewPewGun, 15, 0.9, -1, false
+    super Gun.types.PewPewGun, 15, 0.9, -1, false, 10
 
 # puts an instance into static Gun guns so we can use it for network bullet creation
 Gun.guns[Gun.types.PewPewGun] = new PewPewGun()
@@ -167,13 +174,29 @@ class Player extends Entity
   height: 36
   image: undefined
   angle: 0
+  health: 100
   gun: new PewPewGun()
 
   constructor: (@x, @y) ->
+    @type = Entity.types.Player
     @newX = @x
     @newY = @y
     @image = new Image
     @image.src = "/images/sprites/man_gun.png"
+
+  killPlayer: ->
+    console.log 'player been illiminated'
+    return
+
+  damage: (amount) ->
+    @health -= amount
+    if @health < 0
+      @killPlayer()
+      Engine.socket.emit 'player dead',
+        id: @id
+        x: @x
+        y: @y
+    return
 
   tick: (delta, camera) ->    
     # left
@@ -218,11 +241,12 @@ class Player extends Entity
 
     lineX = 100 * Math.sin(@angle - 36.1)
     lineY = 100 * Math.cos(@angle - 36.1)
+    ###
     Engine.context.beginPath()
     Engine.context.moveTo @x + @width/2 - camera.x, @y + @height/2 - camera.y
     Engine.context.lineTo @x + @width/2 - camera.x + lineX, @y + @height/2 - camera.y + lineY
     Engine.context.stroke()
-
+    ###
     return
 
 class Map
@@ -254,12 +278,39 @@ class Map
         y++
       x++
 
+  removeEntity: (entity) ->
+    Engine.map.entities.splice Engine.map.entities.indexOf(entity), 1
+    return
+
+
+  checkEntityCollision:(e1, e2) ->
+    return not ((e1.y + e1.height < e2.y) or (e1.y > e2.y + e2.height) or (e1.x > e2.x + e2.width) or (e1.x + e1.width < e2.x))
+
+  checkBulletCollisionWithAll: (bullet) ->
+    i = 0
+    while i < Engine.remotePlayers.length
+      if @checkEntityCollision bullet, Engine.remotePlayers[i]
+        Engine.remotePlayers[i].damage Gun.guns[bullet.bulletType].damage
+        @removeEntity bullet
+      i++
+
+    if @checkEntityCollision bullet, Engine.map.player
+      Engine.map.player.damage Gun.guns[bullet.bulletType].damage
+      @removeEntity bullet
+    i++
+
+    # check self
+    return
+
   tick: (delta) ->
     i = 0
     while i < @entities.length
       @entities[i].tick delta, @camera
       @moveEntity @entities[i], @entities[i].x + @entities[i].newX, @entities[i].y, 1
       @moveEntity @entities[i], @entities[i].x, @entities[i].y + @entities[i].newY, 0
+      
+      if @entities[i].type == Entity.types.Bullet
+        @checkBulletCollisionWithAll @entities[i]
       i++
     return
 
@@ -334,6 +385,10 @@ class NetworkClient
 
   onSocketDisconnect: =>
     console.log "disconnected from server"
+    return
+
+  onPlayerDead: (data) =>
+    console.log "player dead: " + data.id
     return
 
   onNewPlayer: (data) =>
@@ -439,7 +494,8 @@ class Engine
     Engine.context.font = "bold 12px Arial"
     Engine.context.fillText "fps: " + Engine.fps, Engine.canvasWidth - 100, 15
     Engine.context.fillText "delta avg: " + Engine.deltaAverage.toFixed(2), Engine.canvasWidth - 100, 30
-    Engine.context.fillText "angle: " + (Engine.map.player.angle * 180 / Math.PI).toFixed(2), 5, 15
+    #Engine.context.fillText "angle: " + (Engine.map.player.angle * 180 / Math.PI).toFixed(2), 5, 15
+    Engine.context.fillText "players: " + (Engine.remotePlayers.length + 1), 5, 15
 
     return 
 
@@ -450,6 +506,7 @@ class Engine
     Engine.socket.on "move player", @networkClient.onMovePlayer
     Engine.socket.on "remove player", @networkClient.onRemovePlayer
     Engine.socket.on "new bullet", @networkClient.onNewBullet
+    Engine.socket.on "player dead", @networkClient.onPlayerDead
     return
 
   # init engine with starting values and trugger animation frame callback
