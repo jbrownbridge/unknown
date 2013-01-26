@@ -324,6 +324,7 @@ class Map
 
   @tileTypes: {
     WALL: 1,
+    GROUND_METAL: 20,
     GROUND_DIRT_1: 21,
     GROUND_DIRT_2: 22,
     GROUND_DIRT_3: 23,
@@ -349,6 +350,9 @@ class Map
   @tileImages: []
 
   constructor: (map,ctx) ->
+    Map.tileImages[Map.tileTypes.GROUND_METAL] = new Image()
+    Map.tileImages[Map.tileTypes.GROUND_METAL].src = "/images/tiles/Floor_tile_misc.png"
+
     Map.tileImages[Map.tileTypes.GROUND_DIRT_1] = new Image()
     Map.tileImages[Map.tileTypes.GROUND_DIRT_1].src = "/images/tiles/Dirt1.bmp"
     Map.tileImages[Map.tileTypes.GROUND_DIRT_2] = new Image()
@@ -418,6 +422,7 @@ class Map
         else if map[y].charAt(x) is "K"
           @tiles[x][y] = Map.tileTypes.SPAWN
         else if map[y].charAt(x) is "P"
+          @tiles[x][y] = Map.tileTypes.PLAYER
           @player = new Player(x * @tileSize, y * @tileSize, 0, true)
           @entities.push @player
         else
@@ -586,6 +591,13 @@ class Map
             Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_3], tx, ty
           when Map.tileTypes.GROUND_SAND_4
             Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_4], tx, ty
+
+          when Map.tileTypes.GROUND_METAL, Map.tileTypes.PLAYER
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_METAL], tx, ty
+
+          when Map.tileTypes.CHEST
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_METAL], tx, ty
+
         x++
       y++
 
