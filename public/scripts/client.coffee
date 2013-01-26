@@ -108,8 +108,8 @@ class Bullet extends Entity
   constructor: (@bulletType, @x, @y, @angle, @speed, network) ->
 
     # if bullets disappear is because colliding with entity
-    @x += 20 * Math.sin(@angle - 36.1)
-    @y += 20 * Math.cos(@angle - 36.1)
+    @x += 25 * Math.sin(@angle - 36.1)
+    @y += 25 * Math.cos(@angle - 36.1)
 
     @type = Entity.types.Bullet
     unless network
