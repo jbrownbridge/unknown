@@ -577,54 +577,54 @@ class Map
     while y < (@camera.y + Engine.canvasHeight) / @tileSize
       x = Math.floor(@camera.x / @tileSize)
       while x < (@camera.x + Engine.canvasWidth) / @tileSize
-        tx = -@camera.x + x * @tileSize
-        ty = - @camera.y + y * @tileSize
+        if x >= 0 and x < @width and y >= 0 and y < @height      
+          tx = -@camera.x + x * @tileSize
+          ty = - @camera.y + y * @tileSize
 
-        switch @tiles[x][y]
-          when Map.tileTypes.WALL
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.WALL], tx, ty
-          when Map.tileTypes.GROUND_DIRT_1
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_1], tx, ty
-          when Map.tileTypes.GROUND_DIRT_2
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_2], tx, ty
-          when Map.tileTypes.GROUND_DIRT_3
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_3], tx, ty
-          when Map.tileTypes.GROUND_DIRT_4
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_4], tx, ty
+          switch @tiles[x][y]
+            when Map.tileTypes.WALL
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.WALL], tx, ty
+            when Map.tileTypes.GROUND_DIRT_1
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_1], tx, ty
+            when Map.tileTypes.GROUND_DIRT_2
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_2], tx, ty
+            when Map.tileTypes.GROUND_DIRT_3
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_3], tx, ty
+            when Map.tileTypes.GROUND_DIRT_4
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_4], tx, ty
 
-          when Map.tileTypes.GROUND_GRASS_1
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_1], tx, ty
-          when Map.tileTypes.GROUND_GRASS_2
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_2], tx, ty
-          when Map.tileTypes.GROUND_GRASS_3
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_3], tx, ty
-          when Map.tileTypes.GROUND_GRASS_4
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_4], tx, ty
+            when Map.tileTypes.GROUND_GRASS_1
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_1], tx, ty
+            when Map.tileTypes.GROUND_GRASS_2
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_2], tx, ty
+            when Map.tileTypes.GROUND_GRASS_3
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_3], tx, ty
+            when Map.tileTypes.GROUND_GRASS_4
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_4], tx, ty
 
-          when Map.tileTypes.GROUND_CLAY_1
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_1], tx, ty
-          when Map.tileTypes.GROUND_CLAY_2
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_2], tx, ty
-          when Map.tileTypes.GROUND_CLAY_3
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_3], tx, ty
-          when Map.tileTypes.GROUND_CLAY_4
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_4], tx, ty
+            when Map.tileTypes.GROUND_CLAY_1
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_1], tx, ty
+            when Map.tileTypes.GROUND_CLAY_2
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_2], tx, ty
+            when Map.tileTypes.GROUND_CLAY_3
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_3], tx, ty
+            when Map.tileTypes.GROUND_CLAY_4
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_4], tx, ty
 
-          when Map.tileTypes.GROUND_SAND_1
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_1], tx, ty
-          when Map.tileTypes.GROUND_SAND_2
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_2], tx, ty
-          when Map.tileTypes.GROUND_SAND_3
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_3], tx, ty
-          when Map.tileTypes.GROUND_SAND_4
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_4], tx, ty
+            when Map.tileTypes.GROUND_SAND_1
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_1], tx, ty
+            when Map.tileTypes.GROUND_SAND_2
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_2], tx, ty
+            when Map.tileTypes.GROUND_SAND_3
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_3], tx, ty
+            when Map.tileTypes.GROUND_SAND_4
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_4], tx, ty
 
-          when Map.tileTypes.GROUND_METAL, Map.tileTypes.SPAWN
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_METAL], tx, ty
+            when Map.tileTypes.GROUND_METAL, Map.tileTypes.SPAWN
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_METAL], tx, ty
 
-          when Map.tileTypes.CHEST
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_METAL], tx, ty
-
+            when Map.tileTypes.CHEST
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_METAL], tx, ty
         x++
       y++
 
