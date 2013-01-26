@@ -117,10 +117,14 @@ playerById = (id) ->
 
 
 onNewBullet = (data) ->
-  console.log data.bulletType
+  #console.log "new bullet"
   @broadcast.emit "new bullet", data
   return
 
+onPlayerDead = (data) ->
+  console.log "player dead: " + data.id
+  @broadcast.emit "player dead: ", data
+  return
 
 init = ->
   players = []
