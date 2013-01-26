@@ -220,6 +220,8 @@ class Player extends Entity
     @lamp.angle = @angle
 
   killPlayer: ->
+    @dx = 0
+    @dy = 0
     @alive = false
     @image = @imageDead
     console.log 'player been illiminated'
