@@ -863,8 +863,8 @@ $(document).ready ->
   Engine.remotePlayers = []
   Engine.multiplayer = true
 
-  Engine.canvasWidth = $(document).width() - 3
-  Engine.canvasHeight = $(document).height() - 3
+  Engine.canvasWidth = $(document).width()
+  Engine.canvasHeight = $(document).height()
 
   canvasJquery = $("<canvas id='canvas' width='" + Engine.canvasWidth + "' height='" + Engine.canvasHeight + "'></canvas>")
   
