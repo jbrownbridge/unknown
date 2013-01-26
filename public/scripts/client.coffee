@@ -83,6 +83,7 @@ class Entity
   dy: 0
   width: 30
   height: 30
+  alive: true
   @types: {
     Player: 1,
     Bullet: 2
@@ -463,12 +464,13 @@ class Map
   tick: (delta) ->
     i = 0
     while i < @entities.length
-      @entities[i].tick delta, @camera
-      @moveEntity @entities[i], @entities[i].x + @entities[i].newX, @entities[i].y, 1
-      @moveEntity @entities[i], @entities[i].x, @entities[i].y + @entities[i].newY, 0
-      
-      if @entities[i].type == Entity.types.Bullet
-        @checkBulletCollisionWithAll @entities[i]
+      if @entities[i].alive
+        @entities[i].tick delta, @camera
+        @moveEntity @entities[i], @entities[i].x + @entities[i].newX, @entities[i].y, 1
+        @moveEntity @entities[i], @entities[i].x, @entities[i].y + @entities[i].newY, 0
+        
+        if @entities[i].type == Entity.types.Bullet
+          @checkBulletCollisionWithAll @entities[i]
       i++
     return
 
@@ -737,11 +739,13 @@ class Engine
     if Engine.map.player.alive
       Engine.alivePlayers++
 
-    Engine.sendNetworkPacket "move player",
-        x: Engine.map.player.x
-        y: Engine.map.player.y
-        angle: Engine.map.player.angle
-        torch: Engine.map.player.torch
+    if Engine.map.player.alive
+      Engine.sendNetworkPacket "move player",
+          x: Engine.map.player.x
+          y: Engine.map.player.y
+          angle: Engine.map.player.angle
+          torch: Engine.map.player.torch
+
     return
 
 
