@@ -101,8 +101,8 @@ class Entity
 
 
 class Bullet extends Entity
-  width: 4
-  height: 4
+  width: 5
+  height: 5
   speed: 1
   bulletType: -1
   constructor: (@bulletType, @x, @y, @angle, @speed, network) ->
@@ -120,7 +120,7 @@ class Bullet extends Entity
         bulletType: @bulletType
       
   render: (camera) ->
-    Engine.context.fillStyle = "rgb(220,220,220)"
+    Engine.context.fillStyle = "rgb(255,255,255)"
     Engine.context.beginPath()
     Engine.context.rect -camera.x + @x, -camera.y + @y, @width, @height
     Engine.context.closePath()
@@ -376,8 +376,6 @@ class Map
     Map.tileImages[Map.tileTypes.GROUND_SAND_3].src = "/images/tiles/Sand3.bmp"
     Map.tileImages[Map.tileTypes.GROUND_SAND_4] = new Image()
     Map.tileImages[Map.tileTypes.GROUND_SAND_4].src = "/images/tiles/Sand4.bmp"
-
-    console.log Map.tileTypes.GROUND_SAND_1
     
     @height = map.length
     @width = map[0].length
@@ -825,8 +823,8 @@ $(document).ready ->
   Engine.remotePlayers = []
   Engine.multiplayer = true
 
-  Engine.canvasWidth = 600
-  Engine.canvasHeight = 600
+  Engine.canvasWidth = $(document).width() - 3
+  Engine.canvasHeight = $(document).height() - 3
 
   canvasJquery = $("<canvas id='canvas' width='" + Engine.canvasWidth + "' height='" + Engine.canvasHeight + "'></canvas>")
   
