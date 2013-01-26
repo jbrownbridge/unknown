@@ -43,11 +43,19 @@
 
 class Camera
   constructor: (@x, @y) ->
+  # update relative to player 
+  tick: (x, y) ->
+    @x = x - Engine.canvasWidth/2
+    @y = y - Engine.canvasHeight/2
+
+
 
 
 
 class Input
   keys: [100]
+  mousex: 0
+  mousey: 0
   update:(e) =>
     @keys[e.which] = false if e.type is "keyup"
     @keys[e.which] = true if e.type is "keydown"
@@ -72,6 +80,9 @@ class Player
   jumping: false
   grounded: false
   image: undefined
+  angle: 0
+  tx: 0
+  ty: 0
 
   constructor: (@x, @y) ->
     @newX = @x
@@ -79,7 +90,7 @@ class Player
     @image = new Image
     @image.src = "/images/sprites/player_30.png"
 
-  tick: (delta) ->
+  tick: (delta, camera) ->
     @grounded = Engine.map.entityGrounded(this)
     
     # left
@@ -100,7 +111,12 @@ class Player
     else
       @dy = 0
 
-    ###
+    # player angle
+    @angle = -Math.atan2 Engine.input.mousey - (@y + @height/2 - camera.y), Engine.input.mousex - (@x + @width/2 - camera.x)
+
+    ###    Engine.context.fillText "fps: " + Engine.fps, Engine.canvasWidth - 100, 15
+    Engine.context.fillText "delta avg: " + Engine.deltaAverage.toFixed(2), Engine.canvasWidth - 100, 30
+
     # jump
     if Engine.input.keys[65] and @grounded
       @grounded = false
@@ -116,7 +132,17 @@ class Player
     # @dy += @gravity unless @grounded
     @newX = @dx * delta
     @newY = @dy * delta
+
+    camera.tick @x, @y
+
     return
+
+  drawRotatedImage: (x, y, angle, context) -> 
+    Engine.context.save()
+    Engine.context.translate x + @width/2, y + @height/2
+    Engine.context.rotate -angle
+    Engine.context.drawImage @image, -@width/2, -@height/2
+    Engine.context.restore(); 
 
   # draw player and some player stats
   render: (camera) ->
@@ -127,13 +153,8 @@ class Player
     Engine.context.closePath()
     Engine.context.fill()
     ###
-    Engine.context.drawImage @image, -camera.x + @x, -camera.y + @y
-    Engine.context.fillStyle = "blue"
-    Engine.context.font = "bold 12px Arial"
-    Engine.context.fillText @grounded, 5, 15
-    Engine.context.fillStyle = "blue"
-    Engine.context.font = "bold 12px Arial"
-    Engine.context.fillText @jumping, 5, 30
+
+    @drawRotatedImage -camera.x + @x, -camera.y + @y, @angle
     return
 
 
@@ -170,7 +191,7 @@ class Map
   tick: (delta) ->
     i = 0
     while i < @entities.length
-      @entities[i].tick delta
+      @entities[i].tick delta, @camera
       @moveEntity @entities[i], @entities[i].x + @entities[i].newX, @entities[i].y, 1
       @moveEntity @entities[i], @entities[i].x, @entities[i].y + @entities[i].newY, 0
       i++
@@ -274,6 +295,7 @@ class NetworkClient
       return
     player.x = data.x
     player.y = data.y
+    player.angle = data.angle
     return
 
   onRemovePlayer: (data) =>
@@ -333,6 +355,7 @@ class Engine
       Engine.socket.emit "move player",
         x: Engine.map.player.x
         y: Engine.map.player.y
+        angle: Engine.map.player.angle
 
     return
 
@@ -350,12 +373,13 @@ class Engine
     Engine.context.restore()
     Engine.map.render()
     
-    # fps 
+    # draw some debug shit
     Engine.context.fillStyle = "red"
     Engine.context.font = "bold 12px Arial"
     Engine.context.fillText "fps: " + Engine.fps, Engine.canvasWidth - 100, 15
     Engine.context.fillText "delta avg: " + Engine.deltaAverage.toFixed(2), Engine.canvasWidth - 100, 30
-    
+    Engine.context.fillText "angle: " + (Engine.map.player.angle * 180 / Math.PI).toFixed(2), 5, 15
+
     return 
 
   @setEventHandlers: ->
@@ -369,16 +393,20 @@ class Engine
   # init engine with starting values and trugger animation frame callback
   @init: ->
     level1 = [
-      "###########", 
-      "#         #", 
-      "#  P      #", 
-      "#         #", 
-      "#      #  #", 
-      "#      #  #", 
-      "###    #  #", 
-      "#     ##  #", 
-      "#         #", 
-      "###########"
+      "      #########", 
+      "      #       #", 
+      "#######    ####", 
+      "#             #", 
+      "###  ###   ####", 
+      "#             #", 
+      "#  P   S      #", 
+      "#             #", 
+      "#      ####   #", 
+      "#      #  #   #", 
+      "###    #  #   #", 
+      "#     ##D##   #", 
+      "#             #", 
+      "###############"
     ]
     level2 = [
       "##########", 
@@ -389,7 +417,7 @@ class Engine
       "#      ###", 
       "##########"
     ]
-    Engine.map = new Map(level2)
+    Engine.map = new Map(level1)
     Engine.run 0
     return
 
@@ -429,8 +457,8 @@ $(document).ready ->
   Engine.multiplayer = true
   Engine.setEventHandlers()
 
-  Engine.canvasWidth = 400
-  Engine.canvasHeight = 400
+  Engine.canvasWidth = 600
+  Engine.canvasHeight = 600
 
   canvasJquery = $("<canvas id='canvas' width='" + Engine.canvasWidth + "' height='" + Engine.canvasHeight + "'></canvas>")
   
@@ -450,15 +478,25 @@ $(document).ready ->
   $(document).bind "keydown", Engine.input.update
   $(document).bind "keyup", Engine.input.update
 
-  $(document).bind "click", (e) ->
-    console.log "click " + e.clientX + " " + e.clientY
-
   $(document).bind "mousedown", (e) ->
-    console.log "mousedown " + e.clientX + " " + e.clientY
+    if e.button is 0
+      Engine.input.mouseLeft = true
+    else if e.button is 1
+      Engine.input.mouseMiddle = true
+    else if e.button is 2
+      Engine.input.mouseRight = true
 
   $(document).bind "mouseup", (e) ->
-    console.log "mouseup " + e.clientX + " " + e.clientY
+    if e.button is 0
+      Engine.input.mouseLeft = false
+    else if e.button is 1
+      Engine.input.mouseMiddle = false
+    else if e.button is 2
+      Engine.input.mouseRight = false
 
+  $(document).bind "mousemove", (e) ->
+    Engine.input.mousex = e.clientX - canvas[0].offsetLeft
+    Engine.input.mousey = e.clientY - canvas[0].offsetTop
 
   return
 

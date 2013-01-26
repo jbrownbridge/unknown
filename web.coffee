@@ -67,6 +67,7 @@ onNewPlayer = (data) ->
     id: newPlayer.id
     x: newPlayer.x
     y: newPlayer.y
+    angle: newPlayer.angle
 
   i = undefined
   existingPlayer = undefined
@@ -77,6 +78,7 @@ onNewPlayer = (data) ->
       id: existingPlayer.id
       x: existingPlayer.x
       y: existingPlayer.y
+      angle: existingPlayer.angle
 
     i++
   players.push newPlayer
@@ -91,11 +93,13 @@ onMovePlayer = (data) ->
   
   movePlayer.x = data.x
   movePlayer.y = data.y
+  movePlayer.angle = data.angle
   
   @broadcast.emit "move player",
     id: movePlayer.id
     x: movePlayer.x
     y: movePlayer.y
+    angle: movePlayer.angle
 
 
 playerById = (id) ->
