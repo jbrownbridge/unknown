@@ -39,7 +39,19 @@
   null
 )()
 
+# Convenience globals
+b2Vec2 = Box2D.Common.Math.b2Vec2
+b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape
+Lamp = illuminated.Lamp
+Lighting = illuminated.Lighting
+DarkMask = illuminated.DarkMask
 
+b2Vec2.prototype.toIlluminated = =>
+  return new illuminated.Vec2(@x, @y)
+
+# Convenience functions
+clamp = (min, max, value) ->
+  return Math.max(min, Math.min(max, value))
 
 class Camera
   constructor: (@x, @y) ->
@@ -83,6 +95,8 @@ class Player
   angle: 0
   tx: 0
   ty: 0
+  torch: true
+  torchTick: 0
 
   constructor: (@x, @y) ->
     @newX = @x
@@ -110,6 +124,18 @@ class Player
       @dy = +0.23
     else
       @dy = 0
+ 
+    if Engine.input.keys[32] and @torchTick == 0
+      console.log("Space")
+      v = new b2Vec2(Engine.map.camera.x + @x + @width/2, -Engine.map.camera.y + @y + @width/2)
+      console.log(v)
+      @torch = not @torch
+      @torchTick += 1
+
+    if @torchTick > 0 and @torchTick < 10
+      @torchTick += 1
+    else if @torchTick >= 10
+      @torchTick = 0
 
     # player angle
     @angle = -Math.atan2 Engine.input.mousey - (@y + @height/2 - camera.y), Engine.input.mousex - (@x + @width/2 - camera.x)
@@ -168,18 +194,24 @@ class Map
   entities: []
   camera: undefined
 
-  constructor: (map) ->
+  playerLight: undefined
+  lighting: undefined
+  darkmask: undefined
+  ctx: undefined
+
+  constructor: (map, ctx) ->
     @height = map.length
     @width = map[0].length
     @tiles = [@width]
+    @ctx = ctx
     @camera = new Camera(-(Engine.canvasWidth - @tileSize * @width) / 2, -(Engine.canvasHeight - @tileSize * @height) / 2)
     x = 0
     while x < @width
       @tiles[x] = [@height]
       y = 0
-      while y < @height        
+      while y < @height
         if map[y].charAt(x) is "#"
-          @tiles[x][y] = 1        
+          @tiles[x][y] = 1
         else if map[y].charAt(x) is "P"
           @player = new Player(x * @tileSize, y * @tileSize)
           @entities.push @player
@@ -187,6 +219,33 @@ class Map
           @tiles[x][y] = 0
         y++
       x++
+    @playerLight = new Lamp({
+      color: "rgba(0,0,0,0)"
+      radius: 0,
+      samples: 1,
+      roughness: 1.2
+    })
+    @tempLamp = new Lamp({
+      color: "rgba(0,0,0,0)"
+      radius: 0,
+      samples: 1,
+      roughness: 1.2,
+      distance: 100,
+    })
+
+    @lighting1 = new Lighting({
+      light: @playerLight,
+      objects: []
+    })
+#     @lighting2 = new Lighting({
+#       light: @tempLamp,
+#       objects: []
+#     })
+
+    @darkmask = new DarkMask({
+      lights: [ @playerLight, @tempLamp ]
+      color: 'rgba(0,0,0,0.96)'
+    })
 
   tick: (delta) ->
     i = 0
@@ -242,7 +301,54 @@ class Map
       x++
     false
 
+  getPlayerPosition: ->
+    return new b2Vec2(-@camera.x + @player.x + @player.width/2, -@camera.y + @player.y + @player.height/2)
+
+  updateIlluminatedScene: ->
+    if @player.torch
+      p = @getPlayerPosition()
+      @playerLight.position = new illuminated.Vec2(p.x, p.y)
+    else
+      @playerLight.position = new illuminated.Vec2(-10000,-10000)
+
+    @tempLamp.position = new illuminated.Vec2(-@camera.x - 45 - @player.width/2 , -@camera.y + 315 - @player.height/2)
+
+    @playerLight.distance = 100
+    @playerLight.angle = @player.angle
+    # Generate opaque objects
+    @lighting1.objects = []
+#    @lighting2.objects = []
+    # Now you would loop through objects and
+    # lighting.objects.push(someObject.getOpaqueObject(camera))
+    @lighting1.compute(@ctx.canvas.width, @ctx.canvas.height)
+#    @lighting2.compute(@ctx.canvas.width, @ctx.canvas.height)
+
+    @darkmask.compute(@ctx.canvas.width, @ctx.canvas.height)
+
+  renderLights: ->
+    @ctx.save()
+    @ctx.globalCompositeOperation = "lighter"
+    @lighting1.render(@ctx)
+#    @lighting2.render(@ctx)
+    @ctx.restore()
+
+  renderFog: ->
+    @ctx.save()
+    @ctx.globalCompositeOperation = "source-over" #"destination-over" #"destination-out" #"source-over"
+    @darkmask.render(@ctx)
+    @ctx.restore()
+
+  renderFloor: ->
+#    @ctx.save()
+#    @camera.translateContext(@ctx)
+    # ctx.drawImage()
+#    @ctx.restore()
+
   render: ->
+    @updateIlluminatedScene()
+    @ctx.save()
+    @ctx.clearRect(0, 0, @ctx.canvas.width, @ctx.canvas.height)
+    @player.torch and @renderLights()
     #tiles
     Engine.context.fillStyle = "rgb(0,0,0)"
     y = 0
@@ -255,17 +361,19 @@ class Map
           Engine.context.closePath()
           Engine.context.fill()
         x++
-      y++    
+      y++
     # local entities
     i = 0
     while i < @entities.length
       @entities[i].render @camera
-      i++    
+      i++
     # remote entities
     i = 0
     while i < Engine.remotePlayers.length
       Engine.remotePlayers[i].render @camera
       i++
+    @renderFog()
+    @ctx.restore()
     return
 
 
@@ -391,7 +499,7 @@ class Engine
     return
 
   # init engine with starting values and trugger animation frame callback
-  @init: ->
+  @init: (ctx) ->
     level1 = [
       "      ###################", 
       "      #                 #", 
@@ -423,7 +531,7 @@ class Engine
       "#      ###", 
       "##########"
     ]
-    Engine.map = new Map(level1)
+    Engine.map = new Map(level1, ctx)
     Engine.run 0
     return
 
@@ -478,7 +586,7 @@ $(document).ready ->
   console.log canvas[0].offsetLeft
   console.log canvas[0].offsetTop
 
-  Engine.init()
+  Engine.init(Engine.context)
   
   # key events
   $(document).bind "keydown", Engine.input.update
