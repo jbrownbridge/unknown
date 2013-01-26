@@ -73,29 +73,37 @@ class Entity
   dy: 0
   width: 30
   height: 30
-  types: {
+  @types: {
     Player: 1,
     Bullet: 2
   }
   constructor: (@x, @y) ->
-    @type = @types.Player
+    @type = Player.types.Player
   tick: (delta, camera) ->
   drawRotatedImage: (x, y, angle, context) -> 
     Engine.context.save()
     Engine.context.translate x + @width/2, y + @height/2
     Engine.context.rotate -angle
     Engine.context.drawImage @image, -@width/2, -@height/2
-    Engine.context.restore(); 
+    Engine.context.restore()
   render: (camera) ->
-
+  collideWithTile: (cx, cy) ->
 
 
 class Bullet extends Entity
-  width: 5
-  height: 5
+  width: 4
+  height: 4
   speed: 1
-  constructor: (@x, @y, @angle) ->
-    @type = @types.Bullet
+  bulletType: -1
+  constructor: (@bulletType, @x, @y, @angle, @speed, network) ->
+    @type = Player.types.Bullet
+    unless network
+      Engine.sendNetworkPacket 'new bullet',
+        x: @x
+        y: @y
+        angle: @angle
+        bulletType: @bulletType
+      
   render: (camera) ->
     Engine.context.fillStyle = "rgb(255,0,0)"
     Engine.context.beginPath()
@@ -108,6 +116,42 @@ class Bullet extends Entity
     @newX = @dx * delta
     @newY = @dy * delta
     return
+  collideWithTile: (cx, cy) ->
+    Engine.map.entities.splice Engine.map.entities.indexOf(@), 1
+    return
+
+
+class Gun
+  @guns = []
+  fireRate: undefined
+  bulletSpeed: undefined
+  bullets: -1
+  type: -1
+  ticks: 0
+  automatic: false
+  @types: {
+    PewPewGun: 1,
+    MachineGun: 2,
+    RocketLauncher: 3
+  }
+  constructor: (@type, @fireRate, @bulletSpeed, @bullets, @automatic) ->
+  tick: ->
+    @ticks++
+    return
+  canFire: ->
+    @ticks > @fireRate
+  fire: (x, y, angle, network) ->
+    Engine.map.entities.push new Bullet @type, x, y, angle, @bulletSpeed, network
+    @ticks = 0
+    return
+
+
+class PewPewGun extends Gun
+  constructor: () ->
+    super Gun.types.PewPewGun, 15, 0.9, -1, false
+
+# puts an instance into static Gun guns so we can use it for network bullet creation
+Gun.guns[Gun.types.PewPewGun] = new PewPewGun()
 
 
 class Player extends Entity
@@ -119,27 +163,25 @@ class Player extends Entity
   dx: 0
   dy: 0
   runSpeed: 0.23
-  width: 30
-  height: 30
+  width: 36
+  height: 36
   image: undefined
   angle: 0
-  bob: 0
+  gun: new PewPewGun()
 
   constructor: (@x, @y) ->
     @newX = @x
     @newY = @y
     @image = new Image
-    @image.src = "/images/sprites/player_30.png"
+    @image.src = "/images/sprites/man_gun.png"
 
   tick: (delta, camera) ->    
     # left
     if Engine.input.keys[65]
       @dx = -0.23
-      @bob--
     # right
     else if Engine.input.keys[68]
       @dx = 0.23
-      @bob++
     else
       @dx = 0
 
@@ -152,13 +194,16 @@ class Player extends Entity
     else
       @dy = 0
 
-    if Engine.input.mouseLeft
-      Engine.map.entities.push new Bullet @x + @width/2, @y + @height/2, @angle 
-      
+    @gun.tick()
+
+    if Engine.input.mouseLeft and @gun.canFire()
+      @gun.fire @x + @width/2, @y + @height/2, @angle, false
+
     @angle = -Math.atan2 Engine.input.mousey - (@y + @height/2 - camera.y), Engine.input.mousex - (@x + @width/2 - camera.x)
     @newX = @dx * delta
     @newY = @dy * delta
     camera.tick @x, @y
+
     return
 
   drawRotatedImage: (x, y, angle, context) -> 
@@ -180,11 +225,9 @@ class Player extends Entity
 
     return
 
-
-
 class Map
   player: undefined
-  tileSize: 40
+  tileSize: 50
   height: 0
   width: 0
   tiles: undefined
@@ -245,6 +288,7 @@ class Map
               entity.x = x * @tileSize - entity.width
             else entity.x = x * @tileSize + @tileSize if entity.dx < 0
             entity.dx = 0
+          entity.collideWithTile x, y
           return
         else
           entity.x = newX
@@ -317,6 +361,10 @@ class NetworkClient
     Engine.remotePlayers.splice Engine.remotePlayers.indexOf(removePlayer), 1
     return
 
+  onNewBullet: (data) ->
+    Gun.guns[data.bulletType].fire data.x, data.y, data.angle, true
+    return
+
   playerById: (id) ->
     i = undefined
     i = 0
@@ -356,17 +404,19 @@ class Engine
   @networkClient = new NetworkClient
 
 
+  @sendNetworkPacket: (name, packet) ->
+    if Engine.multiplayer
+      Engine.socket.emit name, packet
+
   # tick game and network
   @tick: (delta) ->
     Engine.ticks++
     Engine.map.tick delta
     
-    # this should be somewhere else
-    if Engine.multiplayer
-      Engine.socket.emit "move player",
+    Engine.sendNetworkPacket "move player",
         x: Engine.map.player.x
         y: Engine.map.player.y
-        angle: Engine.map.player.angle
+        angle: Engine.map.player.angle    
 
     return
 
@@ -390,7 +440,6 @@ class Engine
     Engine.context.fillText "fps: " + Engine.fps, Engine.canvasWidth - 100, 15
     Engine.context.fillText "delta avg: " + Engine.deltaAverage.toFixed(2), Engine.canvasWidth - 100, 30
     Engine.context.fillText "angle: " + (Engine.map.player.angle * 180 / Math.PI).toFixed(2), 5, 15
-    Engine.context.fillText "bob: " + Engine.map.player.bob, 5, 30
 
     return 
 
@@ -400,6 +449,7 @@ class Engine
     Engine.socket.on "new player", @networkClient.onNewPlayer
     Engine.socket.on "move player", @networkClient.onMovePlayer
     Engine.socket.on "remove player", @networkClient.onRemovePlayer
+    Engine.socket.on "new bullet", @networkClient.onNewBullet
     return
 
   # init engine with starting values and trugger animation frame callback
