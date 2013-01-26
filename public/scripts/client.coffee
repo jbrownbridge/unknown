@@ -350,6 +350,9 @@ class Map
   @tileImages: []
 
   constructor: (map,ctx) ->
+    Map.tileImages[Map.tileTypes.WALL] = new Image()
+    Map.tileImages[Map.tileTypes.WALL].src = "/images/tiles/Wall.png"
+
     Map.tileImages[Map.tileTypes.GROUND_METAL] = new Image()
     Map.tileImages[Map.tileTypes.GROUND_METAL].src = "/images/tiles/Floor_tile_misc.png"
 
@@ -552,10 +555,7 @@ class Map
 
         switch @tiles[x][y]
           when Map.tileTypes.WALL
-            Engine.context.beginPath()
-            Engine.context.rect tx, ty, @tileSize, @tileSize
-            Engine.context.closePath()
-            Engine.context.fill()
+            Engine.context.drawImage Map.tileImages[Map.tileTypes.WALL], tx, ty
           when Map.tileTypes.GROUND_DIRT_1
             Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_1], tx, ty
           when Map.tileTypes.GROUND_DIRT_2
