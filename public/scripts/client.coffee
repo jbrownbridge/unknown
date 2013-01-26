@@ -404,6 +404,16 @@ class Engine
 
   # init engine with starting values and trugger animation frame callback
   @init: ->
+    ###
+    0 = Dirt
+    ^ = Grass
+    + = Clay
+    $ = Sand
+    # = Wall
+    } = Door
+    C = Chest
+    P = Player Spawn Point
+    ###
     level1 = [
       "      ###################", 
       "      #                 #", 
