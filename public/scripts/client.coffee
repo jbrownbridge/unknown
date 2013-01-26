@@ -427,16 +427,21 @@ class Map
           @tiles[x][y] = Map.tileTypes.CHEST
         else if map[y].charAt(x) is "K"
           @tiles[x][y] = Map.tileTypes.SPAWN
-        else if map[y].charAt(x) is "P"
-          @tiles[x][y] = Map.tileTypes.PLAYER
-          @player = new Player(x * @tileSize, y * @tileSize, 0, true)
-          @entities.push @player
+          @spawnPoints.push
+            x: x,
+            y: y
         else
           console.log 'unkonwn tile type at ' + x + ', ' + y
         y++
       x++
     @lights = []
-    @darkmask = new DarkMask({ lights: @lights, color: 'rgba(0,0,0,1)'} )
+    @darkmask = new DarkMask({ lights: @lights, color: 'rgba(0,0,0,1)'})
+
+    #spawn player
+    point = Math.floor(Math.random()*(@spawnPoints.length-1))
+    @player = new Player(@spawnPoints[point].x * @tileSize, @spawnPoints[point].y * @tileSize, 0, true)
+    @entities.push @player
+
 
   removeEntity: (entity) ->
     Engine.map.entities.splice Engine.map.entities.indexOf(entity), 1
@@ -614,7 +619,7 @@ class Map
           when Map.tileTypes.GROUND_SAND_4
             Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_4], tx, ty
 
-          when Map.tileTypes.GROUND_METAL, Map.tileTypes.PLAYER
+          when Map.tileTypes.GROUND_METAL, Map.tileTypes.SPAWN
             Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_METAL], tx, ty
 
           when Map.tileTypes.CHEST
