@@ -323,6 +323,7 @@ class Map
   lights: undefined
   darkmask: undefined
   ctx: undefined
+  spawnPoints: []
 
   @tileTypes: {
     WALL: 1,
