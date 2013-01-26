@@ -62,8 +62,55 @@ class Input
     return
 
 
+class Entity
+  type: -1
+  id: 0
+  x: 0
+  y: 0
+  newX: 0
+  newY: 0
+  dx: 0
+  dy: 0
+  width: 30
+  height: 30
+  types: {
+    Player: 1,
+    Bullet: 2
+  }
+  constructor: (@x, @y) ->
+    @type = @types.Player
+  tick: (delta, camera) ->
+  drawRotatedImage: (x, y, angle, context) -> 
+    Engine.context.save()
+    Engine.context.translate x + @width/2, y + @height/2
+    Engine.context.rotate -angle
+    Engine.context.drawImage @image, -@width/2, -@height/2
+    Engine.context.restore(); 
+  render: (camera) ->
 
-class Player
+
+
+class Bullet extends Entity
+  width: 5
+  height: 5
+  speed: 1
+  constructor: (@x, @y, @angle) ->
+    @type = @types.Bullet
+  render: (camera) ->
+    Engine.context.fillStyle = "rgb(255,0,0)"
+    Engine.context.beginPath()
+    Engine.context.rect -camera.x + @x, -camera.y + @y, @width, @height
+    Engine.context.closePath()
+    Engine.context.fill()
+  tick: (delta, camera) ->
+    @dx = @speed * Math.sin(@angle - 36.1)
+    @dy = @speed * Math.cos(@angle - 36.1)
+    @newX = @dx * delta
+    @newY = @dy * delta
+    return
+
+
+class Player extends Entity
   id: 0
   x: 0
   y: 0
@@ -72,17 +119,11 @@ class Player
   dx: 0
   dy: 0
   runSpeed: 0.23
-  jumpSpeed: 0.36
-  airSpeed: 0.01
-  gravity: 0.023
   width: 30
   height: 30
-  jumping: false
-  grounded: false
   image: undefined
   angle: 0
-  tx: 0
-  ty: 0
+  bob: 0
 
   constructor: (@x, @y) ->
     @newX = @x
@@ -90,15 +131,15 @@ class Player
     @image = new Image
     @image.src = "/images/sprites/player_30.png"
 
-  tick: (delta, camera) ->
-    @grounded = Engine.map.entityGrounded(this)
-    
+  tick: (delta, camera) ->    
     # left
     if Engine.input.keys[65]
       @dx = -0.23
+      @bob--
     # right
     else if Engine.input.keys[68]
       @dx = 0.23
+      @bob++
     else
       @dx = 0
 
@@ -111,30 +152,13 @@ class Player
     else
       @dy = 0
 
-    # player angle
+    if Engine.input.mouseLeft
+      Engine.map.entities.push new Bullet @x + @width/2, @y + @height/2, @angle 
+      
     @angle = -Math.atan2 Engine.input.mousey - (@y + @height/2 - camera.y), Engine.input.mousex - (@x + @width/2 - camera.x)
-
-    ###    Engine.context.fillText "fps: " + Engine.fps, Engine.canvasWidth - 100, 15
-    Engine.context.fillText "delta avg: " + Engine.deltaAverage.toFixed(2), Engine.canvasWidth - 100, 30
-
-    # jump
-    if Engine.input.keys[65] and @grounded
-      @grounded = false
-      @jumping = true
-      @dy -= @jumpSpeed
-    else @jumping = false  unless Engine.input.keys[65]
-    if @jumping
-      @dy -= @airSpeed
-      @jumping = false  if @dy > 0
-    ###
-
-    # in air
-    # @dy += @gravity unless @grounded
     @newX = @dx * delta
     @newY = @dy * delta
-
     camera.tick @x, @y
-
     return
 
   drawRotatedImage: (x, y, angle, context) -> 
@@ -144,17 +168,16 @@ class Player
     Engine.context.drawImage @image, -@width/2, -@height/2
     Engine.context.restore(); 
 
-  # draw player and some player stats
   render: (camera) ->
-    ###
-    Engine.context.fillStyle = "rgb(255,0,0)"
-    Engine.context.beginPath()
-    Engine.context.rect -camera.x + @x, -camera.y + @y, @width, @height
-    Engine.context.closePath()
-    Engine.context.fill()
-    ###
-
     @drawRotatedImage -camera.x + @x, -camera.y + @y, @angle
+
+    lineX = 100 * Math.sin(@angle - 36.1)
+    lineY = 100 * Math.cos(@angle - 36.1)
+    Engine.context.beginPath()
+    Engine.context.moveTo @x + @width/2 - camera.x, @y + @height/2 - camera.y
+    Engine.context.lineTo @x + @width/2 - camera.x + lineX, @y + @height/2 - camera.y + lineY
+    Engine.context.stroke()
+
     return
 
 
@@ -215,13 +238,12 @@ class Map
           if type is 0
             if entity.dy > 0
               entity.y = y * @tileSize - entity.height
-              entity.grounded = true
-            else entity.y = y * @tileSize + @tileSize  if entity.dy < 0
+            else entity.y = y * @tileSize + @tileSize if entity.dy < 0
             entity.dy = 0
           else if type is 1
             if entity.dx > 0
               entity.x = x * @tileSize - entity.width
-            else entity.x = x * @tileSize + @tileSize  if entity.dx < 0
+            else entity.x = x * @tileSize + @tileSize if entity.dx < 0
             entity.dx = 0
           return
         else
@@ -230,17 +252,6 @@ class Map
         x++
       y++
     return
-
-  entityGrounded: (entity) ->
-    xs = Math.floor(entity.x / @tileSize)
-    xe = Math.floor((entity.x + entity.width - 1) / @tileSize)
-    ye = Math.floor((entity.y + entity.height + 1) / @tileSize)    
-    return true  if ye > @height - 1
-    x = xs
-    while x <= xe
-      return true  if @tiles[x][ye] is 1
-      x++
-    false
 
   render: ->
     #tiles
@@ -379,6 +390,7 @@ class Engine
     Engine.context.fillText "fps: " + Engine.fps, Engine.canvasWidth - 100, 15
     Engine.context.fillText "delta avg: " + Engine.deltaAverage.toFixed(2), Engine.canvasWidth - 100, 30
     Engine.context.fillText "angle: " + (Engine.map.player.angle * 180 / Math.PI).toFixed(2), 5, 15
+    Engine.context.fillText "bob: " + Engine.map.player.bob, 5, 30
 
     return 
 
