@@ -183,6 +183,8 @@ class Player extends Entity
   width: 36
   height: 36
   image: undefined
+  imageAlive: undefined
+  imageDead: undefined
   angle: 0
   tx: 0
   ty: 0
@@ -198,9 +200,12 @@ class Player extends Entity
     @type = Entity.types.Player
     @newX = @x
     @newY = @y
-    @image = new Image
     @spriteIndex = Math.floor((Math.random()*8)+1)
-    @image.src = "/images/sprites/man_gun" + @spriteIndex + ".png"
+    @imageAlive = new Image
+    @imageAlive.src = "/images/sprites/man_gun" + @spriteIndex + ".png"
+    @imageDead = new Image
+    @imageDead.src = "/images/sprites/man_dead" + @spriteIndex + ".png"
+    @image = @imageAlive
     @lamp = new Lamp({
       color: "rgba(0,0,0,0)"
       radius: 0,
@@ -216,6 +221,7 @@ class Player extends Entity
 
   killPlayer: ->
     @alive = false
+    @image = @imageDead
     console.log 'player been illiminated'
     return
 
