@@ -48,17 +48,18 @@ onSocketConnection = (client) ->
   client.on "disconnect", onClientDisconnect
   client.on "new player", onNewPlayer
   client.on "move player", onMovePlayer
-
+  client.on "new bullet", onNewBullet
+  return
 
 onClientDisconnect = ->
   util.log "Player has disconnected: " + @id
   removePlayer = playerById(@id)
   unless removePlayer
-    util.log "Player not found: " + @id
     return
   players.splice players.indexOf(removePlayer), 1
   @broadcast.emit "remove player",
     id: @id
+  return
 
 onNewPlayer = (data) ->
   newPlayer = new Player(data.x, data.y)
@@ -68,6 +69,7 @@ onNewPlayer = (data) ->
     x: newPlayer.x
     y: newPlayer.y
     angle: newPlayer.angle
+    torch: newPlayer.torch
 
   i = undefined
   existingPlayer = undefined
@@ -79,28 +81,31 @@ onNewPlayer = (data) ->
       x: existingPlayer.x
       y: existingPlayer.y
       angle: existingPlayer.angle
+      torch: existingPlayer.torch
 
     i++
   players.push newPlayer
+  return
 
 
 onMovePlayer = (data) ->
   movePlayer = playerById(@id)
   
   unless movePlayer
-    util.log "Player not found: " + @id
     return
   
   movePlayer.x = data.x
   movePlayer.y = data.y
   movePlayer.angle = data.angle
+  movePlayer.torch = data.torch
   
   @broadcast.emit "move player",
     id: movePlayer.id
     x: movePlayer.x
     y: movePlayer.y
     angle: movePlayer.angle
-
+    torch: movePlayer.torch
+  return
 
 playerById = (id) ->
   i = undefined
@@ -109,6 +114,12 @@ playerById = (id) ->
     return players[i]  if players[i].id is id
     i++
   false
+
+
+onNewBullet = (data) ->
+  console.log data.bulletType
+  @broadcast.emit "new bullet", data
+  return
 
 
 init = ->
@@ -120,6 +131,7 @@ init = ->
     socket.set "log level", 2
 
   setEventHandlers()
+  return
 
 
 # entry point
