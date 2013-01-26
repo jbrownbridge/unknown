@@ -175,16 +175,20 @@ class Player extends Entity
   image: undefined
   angle: 0
   health: 100
+  alive: true
   gun: new PewPewGun()
+  spriteIndex: 0
 
   constructor: (@x, @y) ->
     @type = Entity.types.Player
     @newX = @x
     @newY = @y
     @image = new Image
-    @image.src = "/images/sprites/man_gun.png"
+    @spriteIndex = Math.floor((Math.random()*8)+1)
+    @image.src = "/images/sprites/man_gun" + @spriteIndex + ".png"
 
   killPlayer: ->
+    @alive = false
     console.log 'player been illiminated'
     return
 
@@ -198,7 +202,11 @@ class Player extends Entity
         y: @y
     return
 
-  tick: (delta, camera) ->    
+  tick: (delta, camera) ->
+    # don't allow the dead to update
+    unless @alive
+      return
+
     # left
     if Engine.input.keys[65]
       @dx = -0.23
@@ -216,6 +224,8 @@ class Player extends Entity
       @dy = +0.23
     else
       @dy = 0
+
+    #if Engine.input.keys[80] 
 
     @gun.tick()
 
@@ -289,12 +299,12 @@ class Map
   checkBulletCollisionWithAll: (bullet) ->
     i = 0
     while i < Engine.remotePlayers.length
-      if @checkEntityCollision bullet, Engine.remotePlayers[i]
+      if Engine.remotePlayers[i].alive and @checkEntityCollision bullet, Engine.remotePlayers[i]
         Engine.remotePlayers[i].damage Gun.guns[bullet.bulletType].damage
         @removeEntity bullet
       i++
 
-    if @checkEntityCollision bullet, Engine.map.player
+    if Engine.map.player.alive and @checkEntityCollision bullet, Engine.map.player
       Engine.map.player.damage Gun.guns[bullet.bulletType].damage
       @removeEntity bullet
     i++
@@ -457,6 +467,7 @@ class Engine
   @socket
   @serverIP = 0
   @networkClient = new NetworkClient
+  @alivePlayers = -1
 
 
   @sendNetworkPacket: (name, packet) ->
@@ -468,6 +479,19 @@ class Engine
     Engine.ticks++
     Engine.map.tick delta
     
+
+    Engine.alivePlayers = 0
+
+    i = 0
+    while i < Engine.remotePlayers.length
+      if Engine.remotePlayers[i].alive
+        Engine.alivePlayers++
+      i++
+
+    if Engine.map.player.alive
+      Engine.alivePlayers++
+
+
     Engine.sendNetworkPacket "move player",
         x: Engine.map.player.x
         y: Engine.map.player.y
@@ -496,6 +520,7 @@ class Engine
     Engine.context.fillText "delta avg: " + Engine.deltaAverage.toFixed(2), Engine.canvasWidth - 100, 30
     #Engine.context.fillText "angle: " + (Engine.map.player.angle * 180 / Math.PI).toFixed(2), 5, 15
     Engine.context.fillText "players: " + (Engine.remotePlayers.length + 1), 5, 15
+    Engine.context.fillText "alive: " + Engine.alivePlayers, 5, 30
 
     return 
 
@@ -603,9 +628,6 @@ $(document).ready ->
   canvasJquery.appendTo "body"
 
   canvas = $('#canvas')
-
-  console.log canvas[0].offsetLeft
-  console.log canvas[0].offsetTop
 
   Engine.init()
   

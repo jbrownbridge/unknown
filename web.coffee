@@ -115,7 +115,7 @@ playerById = (id) ->
 
 
 onNewBullet = (data) ->
-  console.log data.bulletType
+  #console.log "new bullet"
   @broadcast.emit "new bullet", data
   return
 
