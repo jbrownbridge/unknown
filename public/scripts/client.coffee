@@ -210,8 +210,8 @@ class Player extends Entity
       color: "rgba(0,0,0,0)"
       radius: 0,
       samples: 1,
-      roughness: 1.2,
-      distance: 100
+      roughness: 0.7,
+      distance: 150
     })
 
   updateLamp: (camera) ->
