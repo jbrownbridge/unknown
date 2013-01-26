@@ -39,6 +39,19 @@
   null
 )()
 
+# Convenience globals
+b2Vec2 = Box2D.Common.Math.b2Vec2
+b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape
+Lamp = illuminated.Lamp
+Lighting = illuminated.Lighting
+DarkMask = illuminated.DarkMask
+
+b2Vec2.prototype.toIlluminated = =>
+  return new illuminated.Vec2(@x, @y)
+
+# Convenience functions
+clamp = (min, max, value) ->
+  return Math.max(min, Math.min(max, value))
 
 
 class Camera
@@ -47,9 +60,6 @@ class Camera
   tick: (x, y) ->
     @x = x - Engine.canvasWidth/2
     @y = y - Engine.canvasHeight/2
-
-
-
 
 
 class Input
@@ -80,7 +90,7 @@ class Entity
   constructor: (@x, @y) ->
     @type = Player.types.Player
   tick: (delta, camera) ->
-  drawRotatedImage: (x, y, angle, context) -> 
+  drawRotatedImage: (x, y, angle, context) ->
     Engine.context.save()
     Engine.context.translate x + @width/2, y + @height/2
     Engine.context.rotate -angle
@@ -174,18 +184,35 @@ class Player extends Entity
   height: 36
   image: undefined
   angle: 0
+  tx: 0
+  ty: 0
+  torch: true
+  torchTick: 0
+  gun: new PewPewGun()
+  lamp: undefined
   health: 100
   alive: true
-  gun: new PewPewGun()
   spriteIndex: 0
-
-  constructor: (@x, @y) ->
+  
+  constructor: (@x, @y, @angle, @torch) ->
     @type = Entity.types.Player
     @newX = @x
     @newY = @y
     @image = new Image
     @spriteIndex = Math.floor((Math.random()*8)+1)
     @image.src = "/images/sprites/man_gun" + @spriteIndex + ".png"
+    @lamp = new Lamp({
+      color: "rgba(0,0,0,0)"
+      radius: 0,
+      samples: 1,
+      roughness: 1.2,
+      distance: 100
+    })
+
+  updateLamp: (camera) ->
+    p = new b2Vec2(-camera.x + @x + @width/2, -camera.y + @y + @height/2)
+    @lamp.position = new illuminated.Vec2(p.x, p.y)
+    @lamp.angle = @angle
 
   killPlayer: ->
     @alive = false
@@ -224,6 +251,15 @@ class Player extends Entity
       @dy = @runSpeed
     else
       @dy = 0
+ 
+    if Engine.input.keys[32] and @torchTick == 0
+      @torch = not @torch
+      @torchTick += 1
+
+    if @torchTick > 0 and @torchTick < 10
+      @torchTick += 1
+    else if @torchTick >= 10
+      @torchTick = 0
 
     #if Engine.input.keys[80]  
 
@@ -239,12 +275,12 @@ class Player extends Entity
 
     return
 
-  drawRotatedImage: (x, y, angle, context) -> 
+  drawRotatedImage: (x, y, angle, context) ->
     Engine.context.save()
     Engine.context.translate x + @width/2, y + @height/2
     Engine.context.rotate -angle
     Engine.context.drawImage @image, -@width/2, -@height/2
-    Engine.context.restore(); 
+    Engine.context.restore();
 
   render: (camera) ->
     @drawRotatedImage -camera.x + @x, -camera.y + @y, @angle
@@ -259,6 +295,12 @@ class Player extends Entity
     ###
     return
 
+createCanvas = (width, height) ->
+  c = document.createElement("canvas")
+  c.width = width
+  c.height = height
+  return c
+
 class Map
   player: undefined
   tileSize: 64
@@ -267,6 +309,11 @@ class Map
   tiles: undefined
   entities: []
   camera: undefined
+  useLighting: true
+  lights: undefined
+  darkmask: undefined
+  ctx: undefined
+
   @tileTypes: {
     WALL: 1,
     GROUND_DIRT_1: 21,
@@ -293,8 +340,7 @@ class Map
   }
   @tileImages: []
 
-  constructor: (map) ->
-
+  constructor: (map,ctx) ->
     Map.tileImages[Map.tileTypes.GROUND_DIRT_1] = new Image()
     Map.tileImages[Map.tileTypes.GROUND_DIRT_1].src = "/images/tiles/Dirt1.bmp"
     Map.tileImages[Map.tileTypes.GROUND_DIRT_2] = new Image()
@@ -332,16 +378,17 @@ class Map
     Map.tileImages[Map.tileTypes.GROUND_SAND_4].src = "/images/tiles/Sand4.bmp"
 
     console.log Map.tileTypes.GROUND_SAND_1
-
+    
     @height = map.length
     @width = map[0].length
     @tiles = [@width]
+    @ctx = ctx
     @camera = new Camera(-(Engine.canvasWidth - @tileSize * @width) / 2, -(Engine.canvasHeight - @tileSize * @height) / 2)
     x = 0
     while x < @width
       @tiles[x] = [@height]
       y = 0
-      while y < @height        
+      while y < @height
         if map[y].charAt(x) is "#"
           @tiles[x][y] = Map.tileTypes.WALL 
         else if map[y].charAt(x) is " "
@@ -364,14 +411,15 @@ class Map
           @tiles[x][y] = Map.tileTypes.CHEST
         else if map[y].charAt(x) is "K"
           @tiles[x][y] = Map.tileTypes.SPAWN
-
         else if map[y].charAt(x) is "P"
-          @player = new Player(x * @tileSize, y * @tileSize)
+          @player = new Player(x * @tileSize, y * @tileSize, 0, true)
           @entities.push @player
         else
           console.log 'unkonwn tile type at ' + x + ', ' + y
         y++
       x++
+    @lights = []
+    @darkmask = new DarkMask({ lights: @lights, color: 'rgba(0,0,0,1)'} )
 
   removeEntity: (entity) ->
     Engine.map.entities.splice Engine.map.entities.indexOf(entity), 1
@@ -427,12 +475,14 @@ class Map
           if type is 0
             if entity.dy > 0
               entity.y = y * @tileSize - entity.height
-            else entity.y = y * @tileSize + @tileSize if entity.dy < 0
+            else
+              entity.y = y * @tileSize + @tileSize if entity.dy < 0
             entity.dy = 0
           else if type is 1
             if entity.dx > 0
               entity.x = x * @tileSize - entity.width
-            else entity.x = x * @tileSize + @tileSize if entity.dx < 0
+            else
+              entity.x = x * @tileSize + @tileSize if entity.dx < 0
             entity.dx = 0
           entity.collideWithTile x, y
           return
@@ -443,10 +493,44 @@ class Map
       y++
     return
 
-  render: ->
+  entityGrounded: (entity) ->
+    xs = Math.floor(entity.x / @tileSize)
+    xe = Math.floor((entity.x + entity.width - 1) / @tileSize)
+    ye = Math.floor((entity.y + entity.height + 1) / @tileSize)
+    return true  if ye > @height - 1
+    x = xs
+    while x <= xe
+      return true  if @tiles[x][ye] is 1
+      x++
+    false
 
+  updateIlluminatedScene: ->
+    @lights = []
+    if @player.torch
+      @player.updateLamp(@camera)
+      @lights.push(@player.lamp)
+    i = 0
+    while i < Engine.remotePlayers.length
+      entity = Engine.remotePlayers[i]
+      entity.updateLamp(@camera)
+      if entity.torch
+        @lights.push(entity.lamp)
+      i++
+    @darkmask.lights = @lights
+    @darkmask.compute(@ctx.canvas.width, @ctx.canvas.height)
+
+  renderFog: ->
+    @ctx.save()
+    @ctx.globalCompositeOperation = "source-over"
+    @darkmask.render(@ctx)
+    @ctx.restore()
+
+  render: ->
+    @useLighting and @updateIlluminatedScene()
+    @ctx.save()
+    @ctx.clearRect(0, 0, @ctx.canvas.width, @ctx.canvas.height)
+ 
     #tiles
-    
     Engine.context.fillStyle = "rgb(0,0,0)"
     y = Math.floor(@camera.y / @tileSize)
     while y < (@camera.y + Engine.canvasHeight) / @tileSize
@@ -496,28 +580,32 @@ class Map
             Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_3], tx, ty
           when Map.tileTypes.GROUND_SAND_4
             Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_4], tx, ty
-
         x++
-      y++    
+      y++
+
     # local entities
     i = 0
     while i < @entities.length
       @entities[i].render @camera
-      i++    
+      i++
     # remote entities
     i = 0
     while i < Engine.remotePlayers.length
       Engine.remotePlayers[i].render @camera
       i++
+    @useLighting and @renderFog()
+    @ctx.restore()
     return
 
 
 class NetworkClient
   onSocketConnected: =>
-    console.log "connected to server"  
+    console.log "connected to server"
     Engine.socket.emit "new player",
       x: Engine.map.player.x
       y: Engine.map.player.y
+      angle: Engine.map.player.angle
+      torch: Engine.map.player.torch
     return
 
   onSocketDisconnect: =>
@@ -530,25 +618,23 @@ class NetworkClient
 
   onNewPlayer: (data) =>
     console.log "new player connected: " + data.id
-    player = new Player(data.x, data.y)
-    player.id = data.id  
+    player = new Player(data.x, data.y, data.angle, data.torch)
+    player.id = data.id
     Engine.remotePlayers.push player
     return
 
   onMovePlayer: (data) =>
     player = @playerById(data.id)
     unless player
-      console.log "player not found: " + data.id
       return
     player.x = data.x
     player.y = data.y
     player.angle = data.angle
-    return
+    player.torch = data.torch
 
   onRemovePlayer: (data) =>
     removePlayer = @playerById(data.id)
     unless removePlayer
-      console.log "Player not found: " + data.id
       return
     Engine.remotePlayers.splice Engine.remotePlayers.indexOf(removePlayer), 1
     return
@@ -564,9 +650,6 @@ class NetworkClient
       return Engine.remotePlayers[i]  if Engine.remotePlayers[i].id is id
       i++
     false
-    null
-
-
 
 # the game engine
 # is a static class at the moment but I want to change this
@@ -605,8 +688,6 @@ class Engine
   @tick: (delta) ->
     Engine.ticks++
     Engine.map.tick delta
-    
-
     Engine.alivePlayers = 0
 
     i = 0
@@ -618,17 +699,16 @@ class Engine
     if Engine.map.player.alive
       Engine.alivePlayers++
 
-
     Engine.sendNetworkPacket "move player",
         x: Engine.map.player.x
         y: Engine.map.player.y
-        angle: Engine.map.player.angle    
-
+        angle: Engine.map.player.angle
+        torch: Engine.map.player.torch
     return
 
 
   # clear screen and render game and some game stats
-  @render: ->  
+  @render: ->
     # Store the current transformation matrix
     Engine.context.save()
     
@@ -650,7 +730,7 @@ class Engine
     Engine.context.fillText "alive: " + Engine.alivePlayers, 5, 30
     Engine.context.fillText "camera: " + Math.round(Engine.map.camera.x) + ", " + Math.round(Engine.map.camera.y), 5, 45
 
-    return 
+    return
 
   @setEventHandlers: ->
     Engine.socket.on "connect", @networkClient.onSocketConnected
@@ -675,37 +755,38 @@ class Engine
     P = Player Spawn Point
     ###
     level1 = [
-      "      ###################", 
-      "      #                 #", 
-      "#######              ####", 
-      "#                       #", 
-      "###  ###             ####", 
-      "#                       #", 
-      "#  P                    #", 
-      "#                       #", 
-      "#                       #", 
-      "#            ### ##     #", 
-      "#            #    #     #", 
-      "#            #    #     #", 
-      "#            ### ##     #", 
-      "#                       #", 
-      "#      ####             #", 
-      "#      #  #             #", 
-      "###    #  #             #", 
-      "#     ##D##             #", 
-      "#                       #", 
+      "      ###################",
+      "      #                 #",
+      "#######              ####",
+      "#                       #",
+      "###  ###             ####",
+      "#                       #",
+      "#  P                    #",
+      "#                       #",
+      "#                       #",
+      "#            ### ##     #",
+      "#            #    #     #",
+      "#            #    #     #",
+      "#            ### ##     #",
+      "#                       #",
+      "#      ####             #",
+      "#      #  #             #",
+      "###    #  #             #",
+      "#     ##D##             #",
+      "#                       #",
       "#########################"
     ]
     level2 = [
-      "##########", 
-      "#        #", 
-      "#  ###   #", 
-      "#   ##   #", 
-      "# P     ##", 
-      "#      ###", 
+      "##########",
+      "#        #",
+      "#  ###   #",
+      "#   ##   #",
+      "# P     ##",
+      "#      ###",
       "##########"
     ]
-    Engine.map = new Map(window.map)
+    Engine.map = new Map(window.map, Engine.context)
+    Engine.setEventHandlers()
     Engine.run 0
     return
 
@@ -743,7 +824,6 @@ $(document).ready ->
 
   Engine.remotePlayers = []
   Engine.multiplayer = true
-  Engine.setEventHandlers()
 
   Engine.canvasWidth = 600
   Engine.canvasHeight = 600
@@ -758,7 +838,7 @@ $(document).ready ->
   canvas = $('#canvas')
 
   Engine.init()
-  
+ 
   # key events
   $(document).bind "keydown", Engine.input.update
   $(document).bind "keyup", Engine.input.update

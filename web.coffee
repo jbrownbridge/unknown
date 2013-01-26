@@ -55,7 +55,6 @@ onClientDisconnect = ->
   util.log "Player has disconnected: " + @id
   removePlayer = playerById(@id)
   unless removePlayer
-    util.log "Player not found: " + @id
     return
   players.splice players.indexOf(removePlayer), 1
   @broadcast.emit "remove player",
@@ -70,6 +69,7 @@ onNewPlayer = (data) ->
     x: newPlayer.x
     y: newPlayer.y
     angle: newPlayer.angle
+    torch: newPlayer.torch
 
   i = undefined
   existingPlayer = undefined
@@ -81,6 +81,7 @@ onNewPlayer = (data) ->
       x: existingPlayer.x
       y: existingPlayer.y
       angle: existingPlayer.angle
+      torch: existingPlayer.torch
 
     i++
   players.push newPlayer
@@ -91,18 +92,19 @@ onMovePlayer = (data) ->
   movePlayer = playerById(@id)
   
   unless movePlayer
-    util.log "Player not found: " + @id
     return
   
   movePlayer.x = data.x
   movePlayer.y = data.y
   movePlayer.angle = data.angle
+  movePlayer.torch = data.torch
   
   @broadcast.emit "move player",
     id: movePlayer.id
     x: movePlayer.x
     y: movePlayer.y
     angle: movePlayer.angle
+    torch: movePlayer.torch
   return
 
 playerById = (id) ->
