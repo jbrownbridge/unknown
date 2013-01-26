@@ -212,7 +212,7 @@ class Player extends Entity
       radius: 0,
       samples: 1,
       roughness: 0.7,
-      distance: 150
+      distance: 160
     })
 
   updateLamp: (camera) ->
