@@ -73,6 +73,8 @@ class Input
 
 
 class Entity
+  onChest: false
+  chest: undefined
   type: -1
   id: 0
   x: 0
@@ -86,7 +88,8 @@ class Entity
   alive: true
   @types: {
     Player: 1,
-    Bullet: 2
+    Bullet: 2,
+    Chest: 3
   }
   constructor: (@x, @y) ->
     @type = Player.types.Player
@@ -307,7 +310,7 @@ class Player extends Entity
     @newX = @dx * delta
     @newY = @dy * delta
     camera.tick @x, @y
-
+      
     return
 
   drawRotatedImage: (x, y, angle, context) ->
@@ -335,6 +338,30 @@ createCanvas = (width, height) ->
   c.width = width
   c.height = height
   return c
+
+class Chest extends Entity
+  @imageOpen = new Image()
+  @imageOpen.src = "/images/sprites/Chest_Open.png"
+  @imageClosed = new Image()
+  @imageClosed.src = "/images/sprites/Chest_Closed.png"
+  @statusTypes: {
+    OPEN: 1,
+    CLOSED: 2
+  }
+  chestType: undefined
+  image: undefined
+  constructor: (@x, @y) ->
+    @type = Entity.types.Chest
+    @image = Chest.imageClosed
+    @chestType = Chest.statusTypes.CLOSED
+    @width = 64
+    @height = 64
+
+    console.log @type
+  render: (camera) ->
+    Engine.context.drawImage @image, -camera.x + @x, -camera.y + @y
+    #Engine.context.fillText "chest", -camera.x + @x, -camera.y + @y
+    return
 
 class Map
   player: undefined
@@ -450,6 +477,8 @@ class Map
           @tiles[x][y] = Map.tileTypes.DOOR_DOUBLE
         else if map[y].charAt(x) is "C"
           @tiles[x][y] = Map.tileTypes.CHEST
+          @entities.push(new Chest(x * @tileSize, y * @tileSize))
+
         else if map[y].charAt(x) is "K"
           @tiles[x][y] = Map.tileTypes.SPAWN
           @spawnPoints.push
@@ -476,17 +505,22 @@ class Map
   checkEntityCollision:(e1, e2) ->
     return not ((e1.y + e1.height < e2.y) or (e1.y > e2.y + e2.height) or (e1.x > e2.x + e2.width) or (e1.x + e1.width < e2.x))
 
-  checkBulletCollisionWithAll: (bullet) ->
+  checkBulletCollisionWithAll: (entity) ->
     i = 0
     while i < Engine.remotePlayers.length
-      if Engine.remotePlayers[i].alive and @checkEntityCollision bullet, Engine.remotePlayers[i]
-        Engine.remotePlayers[i].damage Gun.guns[bullet.bulletType].damage
-        @removeEntity bullet
+      if Engine.remotePlayers[i].alive and @checkEntityCollision entity, Engine.remotePlayers[i]
+        if entity.type is Entity.types.Bullet
+          Engine.remotePlayers[i].damage Gun.guns[bullet.bulletType].damage
+          @removeEntity entity
       i++
 
-    if Engine.map.player.alive and @checkEntityCollision bullet, Engine.map.player
-      Engine.map.player.damage Gun.guns[bullet.bulletType].damage
-      @removeEntity bullet
+    if Engine.map.player.alive and @checkEntityCollision entity, Engine.map.player
+      if entity.type is Entity.types.Bullet
+        Engine.map.player.damage Gun.guns[bullet.bulletType].damage
+        @removeEntity entity
+      else if entity.type is Entity.types.Chest
+        Engine.map.player.onChest = true
+        Engine.map.player.chest = entity
     i++
 
     # check self
@@ -494,13 +528,15 @@ class Map
 
   tick: (delta) ->
     i = 0
+    @player.onChest = false
+
     while i < @entities.length
       if @entities[i].alive
         @entities[i].tick delta, @camera
         @moveEntity @entities[i], @entities[i].x + @entities[i].newX, @entities[i].y, 1
         @moveEntity @entities[i], @entities[i].x, @entities[i].y + @entities[i].newY, 0
         
-        if @entities[i].type == Entity.types.Bullet
+        if @entities[i].type is Entity.types.Bullet or @entities[i].type is Entity.types.Chest
           @checkBulletCollisionWithAll @entities[i]
       i++
     return
@@ -824,6 +860,8 @@ class Engine
     #Engine.context.fillText "angle: " + (Engine.map.player.angle * 180 / Math.PI).toFixed(2), 5, 15
     i = 1
     Engine.context.fillText "position: " + Math.floor(Engine.map.player.x) + ", " + Math.floor(Engine.map.player.y), 5, 15*i
+    i++
+    Engine.context.fillText "on chest: " + Engine.map.player.onChest, 5, 15*i
     i++
 
     gunType = ''
