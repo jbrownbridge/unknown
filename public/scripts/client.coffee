@@ -83,6 +83,7 @@ class Entity
   dy: 0
   width: 30
   height: 30
+  alive: true
   @types: {
     Player: 1,
     Bullet: 2
@@ -212,7 +213,7 @@ class Player extends Entity
       radius: 0,
       samples: 1,
       roughness: 0.7,
-      distance: 150
+      distance: 160
     })
     unless @alive
       console.log("Creating dead player")
@@ -327,6 +328,7 @@ class Map
   lights: undefined
   darkmask: undefined
   ctx: undefined
+  spawnPoints: []
 
   @tileTypes: {
     WALL: 1,
@@ -430,16 +432,21 @@ class Map
           @tiles[x][y] = Map.tileTypes.CHEST
         else if map[y].charAt(x) is "K"
           @tiles[x][y] = Map.tileTypes.SPAWN
-        else if map[y].charAt(x) is "P"
-          @tiles[x][y] = Map.tileTypes.PLAYER
-          @player = new Player(x * @tileSize, y * @tileSize, 0, true, true)
-          @entities.push @player
+          @spawnPoints.push
+            x: x,
+            y: y
         else
           console.log 'unkonwn tile type at ' + x + ', ' + y
         y++
       x++
     @lights = []
-    @darkmask = new DarkMask({ lights: @lights, color: 'rgba(0,0,0,1)'} )
+    @darkmask = new DarkMask({ lights: @lights, color: 'rgba(0,0,0,1)'})
+
+    #spawn player
+    point = Math.floor(Math.random()*(@spawnPoints.length-1))
+    @player = new Player(@spawnPoints[point].x * @tileSize, @spawnPoints[point].y * @tileSize, 0, true, true)
+    @entities.push @player
+
 
   removeEntity: (entity) ->
     Engine.map.entities.splice Engine.map.entities.indexOf(entity), 1
@@ -468,12 +475,13 @@ class Map
   tick: (delta) ->
     i = 0
     while i < @entities.length
-      @entities[i].tick delta, @camera
-      @moveEntity @entities[i], @entities[i].x + @entities[i].newX, @entities[i].y, 1
-      @moveEntity @entities[i], @entities[i].x, @entities[i].y + @entities[i].newY, 0
-      
-      if @entities[i].type == Entity.types.Bullet
-        @checkBulletCollisionWithAll @entities[i]
+      if @entities[i].alive
+        @entities[i].tick delta, @camera
+        @moveEntity @entities[i], @entities[i].x + @entities[i].newX, @entities[i].y, 1
+        @moveEntity @entities[i], @entities[i].x, @entities[i].y + @entities[i].newY, 0
+        
+        if @entities[i].type == Entity.types.Bullet
+          @checkBulletCollisionWithAll @entities[i]
       i++
     return
 
@@ -587,54 +595,54 @@ class Map
     while y < (@camera.y + Engine.canvasHeight) / @tileSize
       x = Math.floor(@camera.x / @tileSize)
       while x < (@camera.x + Engine.canvasWidth) / @tileSize
-        tx = -@camera.x + x * @tileSize
-        ty = - @camera.y + y * @tileSize
+        if x >= 0 and x < @width and y >= 0 and y < @height      
+          tx = -@camera.x + x * @tileSize
+          ty = - @camera.y + y * @tileSize
 
-        switch @tiles[x][y]
-          when Map.tileTypes.WALL
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.WALL], tx, ty
-          when Map.tileTypes.GROUND_DIRT_1
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_1], tx, ty
-          when Map.tileTypes.GROUND_DIRT_2
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_2], tx, ty
-          when Map.tileTypes.GROUND_DIRT_3
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_3], tx, ty
-          when Map.tileTypes.GROUND_DIRT_4
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_4], tx, ty
+          switch @tiles[x][y]
+            when Map.tileTypes.WALL
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.WALL], tx, ty
+            when Map.tileTypes.GROUND_DIRT_1
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_1], tx, ty
+            when Map.tileTypes.GROUND_DIRT_2
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_2], tx, ty
+            when Map.tileTypes.GROUND_DIRT_3
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_3], tx, ty
+            when Map.tileTypes.GROUND_DIRT_4
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_DIRT_4], tx, ty
 
-          when Map.tileTypes.GROUND_GRASS_1
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_1], tx, ty
-          when Map.tileTypes.GROUND_GRASS_2
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_2], tx, ty
-          when Map.tileTypes.GROUND_GRASS_3
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_3], tx, ty
-          when Map.tileTypes.GROUND_GRASS_4
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_4], tx, ty
+            when Map.tileTypes.GROUND_GRASS_1
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_1], tx, ty
+            when Map.tileTypes.GROUND_GRASS_2
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_2], tx, ty
+            when Map.tileTypes.GROUND_GRASS_3
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_3], tx, ty
+            when Map.tileTypes.GROUND_GRASS_4
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_GRASS_4], tx, ty
 
-          when Map.tileTypes.GROUND_CLAY_1
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_1], tx, ty
-          when Map.tileTypes.GROUND_CLAY_2
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_2], tx, ty
-          when Map.tileTypes.GROUND_CLAY_3
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_3], tx, ty
-          when Map.tileTypes.GROUND_CLAY_4
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_4], tx, ty
+            when Map.tileTypes.GROUND_CLAY_1
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_1], tx, ty
+            when Map.tileTypes.GROUND_CLAY_2
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_2], tx, ty
+            when Map.tileTypes.GROUND_CLAY_3
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_3], tx, ty
+            when Map.tileTypes.GROUND_CLAY_4
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_CLAY_4], tx, ty
 
-          when Map.tileTypes.GROUND_SAND_1
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_1], tx, ty
-          when Map.tileTypes.GROUND_SAND_2
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_2], tx, ty
-          when Map.tileTypes.GROUND_SAND_3
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_3], tx, ty
-          when Map.tileTypes.GROUND_SAND_4
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_4], tx, ty
+            when Map.tileTypes.GROUND_SAND_1
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_1], tx, ty
+            when Map.tileTypes.GROUND_SAND_2
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_2], tx, ty
+            when Map.tileTypes.GROUND_SAND_3
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_3], tx, ty
+            when Map.tileTypes.GROUND_SAND_4
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_SAND_4], tx, ty
 
-          when Map.tileTypes.GROUND_METAL, Map.tileTypes.PLAYER
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_METAL], tx, ty
+            when Map.tileTypes.GROUND_METAL, Map.tileTypes.SPAWN
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_METAL], tx, ty
 
-          when Map.tileTypes.CHEST
-            Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_METAL], tx, ty
-
+            when Map.tileTypes.CHEST
+              Engine.context.drawImage Map.tileImages[Map.tileTypes.GROUND_METAL], tx, ty
         x++
       y++
 
@@ -765,11 +773,13 @@ class Engine
     if Engine.map.player.alive
       Engine.alivePlayers++
 
-    Engine.sendNetworkPacket "move player",
-        x: Engine.map.player.x
-        y: Engine.map.player.y
-        angle: Engine.map.player.angle
-        torch: Engine.map.player.torch
+    if Engine.map.player.alive
+      Engine.sendNetworkPacket "move player",
+          x: Engine.map.player.x
+          y: Engine.map.player.y
+          angle: Engine.map.player.angle
+          torch: Engine.map.player.torch
+
     return
 
 
@@ -892,8 +902,8 @@ $(document).ready ->
   Engine.remotePlayers = []
   Engine.multiplayer = true
 
-  Engine.canvasWidth = $(document).width() - 3
-  Engine.canvasHeight = $(document).height() - 3
+  Engine.canvasWidth = $(document).width()
+  Engine.canvasHeight = $(document).height()
 
   canvasJquery = $("<canvas id='canvas' width='" + Engine.canvasWidth + "' height='" + Engine.canvasHeight + "'></canvas>")
   
