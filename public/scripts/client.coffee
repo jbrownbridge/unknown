@@ -236,8 +236,8 @@ class Player extends Entity
       color: "rgba(0,0,0,0)"
       radius: 0,
       samples: 1,
-      roughness: 0.7,
-      distance: 160
+      roughness: 0.85,
+      distance: 175
     })
     unless @alive
       console.log("Creating dead player")
@@ -534,7 +534,7 @@ class Map
         y++
       x++
     @lights = []
-    @darkmask = new DarkMask({ lights: @lights, color: 'rgba(0,0,0,1)'})
+    @darkmask = new DarkMask({ lights: @lights, color: 'rgba(0,0,0,0.925)'})
 
     #spawn player
     point = Math.floor(Math.random()*(@spawnPoints.length-1))
