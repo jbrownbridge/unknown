@@ -181,15 +181,15 @@ class Gun
 
 class PewPewGun extends Gun
   constructor: () ->
-    super Gun.types.PewPewGun, 30, 0.9, -1, false, 10 
+    super Gun.types.PewPewGun, 35, 0.9, -1, false, 31 
 
 class MachineGun extends Gun
   constructor: () ->
-    super Gun.types.MachineGun, 5, 0.7, 100, true, 6
+    super Gun.types.MachineGun, 5, 0.7, 150, true, 7
 
 class RocketLauncher extends Gun
   constructor: () ->
-    super Gun.types.RocketLauncher, 60, 0.525, 5, false, 55
+    super Gun.types.RocketLauncher, 45, 0.5, 7, false, 55
 
 # puts an instance into static Gun guns so we can use it for network bullet creation
 Gun.guns[Gun.types.PewPewGun] = new PewPewGun()
@@ -308,10 +308,26 @@ class Player extends Entity
         @chest.chestStatus = Chest.chestStatusTypes.OPEN
       else if @chest.chestStatus is Chest.chestStatusTypes.OPEN
         @chest.takeShitOut()
+        
         if @chest.content is Chest.contentTypes.MACHINE_GUN
+          ammo = 150
+          if @gun.type is Gun.types.MachineGun
+            ammo += @gun.bullets
+            if ammo > 450
+              ammo = 450
           @gun = new MachineGun()
+          console.log ammo
+          @gun.bullets = ammo
+
         else if @chest.content is Chest.contentTypes.ROCKET_LAUNCHER
+          ammo = 7
+          if @gun.type is Gun.types.RocketLauncher
+            ammo += @gun.bullets
+            if ammo > 21
+              ammo = 21
           @gun = new RocketLauncher()
+          @gun.bullets = ammo  
+
         @chest.chestStatus = Chest.chestStatusTypes.EMPTY
       # don't do anything for empty chests
     @chestTick++
@@ -367,8 +383,8 @@ class Chest extends Entity
     EMPTY: 3
   }
   @contentTypes: {
-    MACHINE_GUN: 1,
-    ROCKET_LAUNCHER: 2
+    MACHINE_GUN: 2,
+    ROCKET_LAUNCHER: 3
   }
   @contentTypeImages = []
   @imageMachineGun = new Image()
@@ -380,14 +396,14 @@ class Chest extends Entity
   image: undefined
   ticks: 0
   # 1 minute to refresh
-  refreshTicks: 600
+  refreshTicks: 120
   constructor: (@x, @y) ->
     @type = Entity.types.Chest
     @width = 64
     @height = 64
     @refreshChest()
   refreshChest: ->
-    @content = Math.floor((Math.random()*2)+1)
+    @content = Math.floor((Math.random()*2)+1)+1
     @chestStatus = Chest.chestStatusTypes.CLOSED
     @ticks = 0 
   takeShitOut: ->
@@ -534,7 +550,7 @@ class Map
         y++
       x++
     @lights = []
-    @darkmask = new DarkMask({ lights: @lights, color: 'rgba(0,0,0,0.925)'})
+    @darkmask = new DarkMask({ lights: @lights, color: 'rgba(0,0,0,0.95)'})
 
     #spawn player
     point = Math.floor(Math.random()*(@spawnPoints.length-1))
