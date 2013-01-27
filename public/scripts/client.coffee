@@ -307,6 +307,7 @@ class Player extends Entity
       if @chest.chestStatus is Chest.chestStatusTypes.CLOSED
         @chest.chestStatus = Chest.chestStatusTypes.OPEN
       else if @chest.chestStatus is Chest.chestStatusTypes.OPEN
+        @chest.takeShitOut()
         if @chest.content is Chest.contentTypes.MACHINE_GUN
           @gun = new MachineGun()
         else if @chest.content is Chest.contentTypes.ROCKET_LAUNCHER
@@ -389,6 +390,8 @@ class Chest extends Entity
     @content = Math.floor((Math.random()*2)+1)
     @chestStatus = Chest.chestStatusTypes.CLOSED
     @ticks = 0 
+  takeShitOut: ->
+    @ticks = 0
   tick: ->
     @ticks++
     if @ticks > @refreshTicks
@@ -547,18 +550,18 @@ class Map
   checkEntityCollision:(e1, e2) ->
     return not ((e1.y + e1.height < e2.y) or (e1.y > e2.y + e2.height) or (e1.x > e2.x + e2.width) or (e1.x + e1.width < e2.x))
 
-  checkBulletCollisionWithAll: (entity) ->
+  checkCollisionWithAll: (entity) ->
     i = 0
     while i < Engine.remotePlayers.length
       if Engine.remotePlayers[i].alive and @checkEntityCollision entity, Engine.remotePlayers[i]
         if entity.type is Entity.types.Bullet
-          Engine.remotePlayers[i].damage Gun.guns[bullet.bulletType].damage
+          Engine.remotePlayers[i].damage Gun.guns[entity.bulletType].damage
           @removeEntity entity
       i++
 
     if Engine.map.player.alive and @checkEntityCollision entity, Engine.map.player
       if entity.type is Entity.types.Bullet
-        Engine.map.player.damage Gun.guns[bullet.bulletType].damage
+        Engine.map.player.damage Gun.guns[entity.bulletType].damage
         @removeEntity entity
       else if entity.type is Entity.types.Chest
         Engine.map.player.onChest = true
@@ -579,7 +582,7 @@ class Map
         @moveEntity @entities[i], @entities[i].x, @entities[i].y + @entities[i].newY, 0
         
         if @entities[i].type is Entity.types.Bullet or @entities[i].type is Entity.types.Chest
-          @checkBulletCollisionWithAll @entities[i]
+          @checkCollisionWithAll @entities[i]
       i++
     return
 
