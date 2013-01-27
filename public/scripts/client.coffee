@@ -73,6 +73,8 @@ class Input
 
 
 class Entity
+  onChest: false
+  chest: undefined
   type: -1
   id: 0
   x: 0
@@ -86,7 +88,8 @@ class Entity
   alive: true
   @types: {
     Player: 1,
-    Bullet: 2
+    Bullet: 2,
+    Chest: 3
   }
   constructor: (@x, @y) ->
     @type = Player.types.Player
@@ -107,10 +110,16 @@ class Bullet extends Entity
   speed: 1
   bulletType: -1
   constructor: (@bulletType, @x, @y, @angle, @speed, network) ->
+    startDistance = 25
+
+    if @bulletType is Gun.types.RocketLauncher
+      @width = 10
+      @height = 10
+      startDistance = 40
 
     # if bullets disappear is because colliding with entity
-    @x += 25 * Math.sin(@angle - 36.1)
-    @y += 25 * Math.cos(@angle - 36.1)
+    @x += startDistance * Math.sin(@angle - 36.1)
+    @y += startDistance * Math.cos(@angle - 36.1)
 
     @type = Entity.types.Bullet
     unless network
@@ -145,7 +154,8 @@ class Gun
   bulletSpeed: undefined
   bullets: -1
   type: -1
-  ticks: 0
+  # makes sure we can fire when we get it
+  ticks: 120
   damage: 0
   automatic: false
   @types: {
@@ -158,8 +168,12 @@ class Gun
     @ticks++
     return
   canFire: ->
-    @ticks > @fireRate
+    @ticks > @fireRate and (@bullets is -1 or @bullets > 0)
   fire: (x, y, angle, network) ->
+    if @bullets > 0 
+      @bullets--
+      if @bullets is 0
+        Engine.map.player.gun = new PewPewGun()
     Engine.map.entities.push (new Bullet @type, x, y, angle, @bulletSpeed, network)
     @ticks = 0
     return
@@ -167,11 +181,20 @@ class Gun
 
 class PewPewGun extends Gun
   constructor: () ->
-    super Gun.types.PewPewGun, 15, 0.9, -1, false, 10
+    super Gun.types.PewPewGun, 30, 0.9, -1, false, 10 
+
+class MachineGun extends Gun
+  constructor: () ->
+    super Gun.types.MachineGun, 5, 0.7, 100, true, 6
+
+class RocketLauncher extends Gun
+  constructor: () ->
+    super Gun.types.RocketLauncher, 60, 0.525, 5, false, 55
 
 # puts an instance into static Gun guns so we can use it for network bullet creation
 Gun.guns[Gun.types.PewPewGun] = new PewPewGun()
-
+Gun.guns[Gun.types.MachineGun] = new MachineGun()
+Gun.guns[Gun.types.RocketLauncher] = new RocketLauncher()
 
 class Player extends Entity
   id: 0
@@ -287,7 +310,7 @@ class Player extends Entity
     @newX = @dx * delta
     @newY = @dy * delta
     camera.tick @x, @y
-
+      
     return
 
   drawRotatedImage: (x, y, angle, context) ->
@@ -315,6 +338,30 @@ createCanvas = (width, height) ->
   c.width = width
   c.height = height
   return c
+
+class Chest extends Entity
+  @imageOpen = new Image()
+  @imageOpen.src = "/images/sprites/Chest_Open.png"
+  @imageClosed = new Image()
+  @imageClosed.src = "/images/sprites/Chest_Closed.png"
+  @statusTypes: {
+    OPEN: 1,
+    CLOSED: 2
+  }
+  chestType: undefined
+  image: undefined
+  constructor: (@x, @y) ->
+    @type = Entity.types.Chest
+    @image = Chest.imageClosed
+    @chestType = Chest.statusTypes.CLOSED
+    @width = 64
+    @height = 64
+
+    console.log @type
+  render: (camera) ->
+    Engine.context.drawImage @image, -camera.x + @x, -camera.y + @y
+    #Engine.context.fillText "chest", -camera.x + @x, -camera.y + @y
+    return
 
 class Map
   player: undefined
@@ -430,6 +477,8 @@ class Map
           @tiles[x][y] = Map.tileTypes.DOOR_DOUBLE
         else if map[y].charAt(x) is "C"
           @tiles[x][y] = Map.tileTypes.CHEST
+          @entities.push(new Chest(x * @tileSize, y * @tileSize))
+
         else if map[y].charAt(x) is "K"
           @tiles[x][y] = Map.tileTypes.SPAWN
           @spawnPoints.push
@@ -456,17 +505,22 @@ class Map
   checkEntityCollision:(e1, e2) ->
     return not ((e1.y + e1.height < e2.y) or (e1.y > e2.y + e2.height) or (e1.x > e2.x + e2.width) or (e1.x + e1.width < e2.x))
 
-  checkBulletCollisionWithAll: (bullet) ->
+  checkBulletCollisionWithAll: (entity) ->
     i = 0
     while i < Engine.remotePlayers.length
-      if Engine.remotePlayers[i].alive and @checkEntityCollision bullet, Engine.remotePlayers[i]
-        Engine.remotePlayers[i].damage Gun.guns[bullet.bulletType].damage
-        @removeEntity bullet
+      if Engine.remotePlayers[i].alive and @checkEntityCollision entity, Engine.remotePlayers[i]
+        if entity.type is Entity.types.Bullet
+          Engine.remotePlayers[i].damage Gun.guns[bullet.bulletType].damage
+          @removeEntity entity
       i++
 
-    if Engine.map.player.alive and @checkEntityCollision bullet, Engine.map.player
-      Engine.map.player.damage Gun.guns[bullet.bulletType].damage
-      @removeEntity bullet
+    if Engine.map.player.alive and @checkEntityCollision entity, Engine.map.player
+      if entity.type is Entity.types.Bullet
+        Engine.map.player.damage Gun.guns[bullet.bulletType].damage
+        @removeEntity entity
+      else if entity.type is Entity.types.Chest
+        Engine.map.player.onChest = true
+        Engine.map.player.chest = entity
     i++
 
     # check self
@@ -474,13 +528,15 @@ class Map
 
   tick: (delta) ->
     i = 0
+    @player.onChest = false
+
     while i < @entities.length
       if @entities[i].alive
         @entities[i].tick delta, @camera
         @moveEntity @entities[i], @entities[i].x + @entities[i].newX, @entities[i].y, 1
         @moveEntity @entities[i], @entities[i].x, @entities[i].y + @entities[i].newY, 0
         
-        if @entities[i].type == Entity.types.Bullet
+        if @entities[i].type is Entity.types.Bullet or @entities[i].type is Entity.types.Chest
           @checkBulletCollisionWithAll @entities[i]
       i++
     return
@@ -800,11 +856,36 @@ class Engine
     Engine.context.fillStyle = "red"
     Engine.context.font = "bold 12px Arial"
     Engine.context.fillText "fps: " + Engine.fps, Engine.canvasWidth - 100, 15
-    Engine.context.fillText "delta avg: " + Engine.deltaAverage.toFixed(2), Engine.canvasWidth - 100, 30
+    #Engine.context.fillText "delta avg: " + Engine.deltaAverage.toFixed(2), Engine.canvasWidth - 100, 30
     #Engine.context.fillText "angle: " + (Engine.map.player.angle * 180 / Math.PI).toFixed(2), 5, 15
-    Engine.context.fillText "players: " + (Engine.remotePlayers.length + 1), 5, 15
-    Engine.context.fillText "alive: " + Engine.alivePlayers, 5, 30
-    Engine.context.fillText "camera: " + Math.round(Engine.map.camera.x) + ", " + Math.round(Engine.map.camera.y), 5, 45
+    i = 1
+    Engine.context.fillText "position: " + Math.floor(Engine.map.player.x) + ", " + Math.floor(Engine.map.player.y), 5, 15*i
+    i++
+    Engine.context.fillText "on chest: " + Engine.map.player.onChest, 5, 15*i
+    i++
+
+    gunType = ''
+    switch Engine.map.player.gun.type
+      when Gun.types.PewPewGun then gunType = 'Rifle'
+      when Gun.types.MachineGun then gunType = 'Machine Gun'
+      when Gun.types.RocketLauncher then gunType = 'Rocket Launcher'
+
+    Engine.context.fillText "gun: " + gunType, 5, 15*i
+    i++
+
+    bullets
+    if Engine.map.player.gun.bullets is -1
+      bullets = 'unlimited'
+    else
+      bullets = Engine.map.player.gun.bullets
+
+    Engine.context.fillText "bullets: " + bullets, 5, 15*i
+    i++
+    i++
+
+    Engine.context.fillText "players: " + (Engine.remotePlayers.length + 1), 5, 15*i
+    i++
+    Engine.context.fillText "alive: " + Engine.alivePlayers, 5, 15*i
 
     return
 
