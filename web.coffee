@@ -37,11 +37,10 @@ Player = require("./game/player").Player
 # game local
 socket = undefined
 players = undefined
-
+dead_players = {}
 
 setEventHandlers = ->
   socket.sockets.on "connection", onSocketConnection
-
 
 onSocketConnection = (client) ->
   util.log "New player has connected: " + client.id
@@ -49,28 +48,30 @@ onSocketConnection = (client) ->
   client.on "new player", onNewPlayer
   client.on "move player", onMovePlayer
   client.on "new bullet", onNewBullet
+  client.on "player dead", onPlayerDead
   return
 
 onClientDisconnect = ->
   util.log "Player has disconnected: " + @id
   removePlayer = playerById(@id)
+  @broadcast.emit "remove player",
+    id: @id
   unless removePlayer
     return
   players.splice players.indexOf(removePlayer), 1
-  @broadcast.emit "remove player",
-    id: @id
   return
 
 onNewPlayer = (data) ->
   newPlayer = new Player(data.x, data.y)
   newPlayer.id = @id
+  @emit "client id", id: @id
   @broadcast.emit "new player",
     id: newPlayer.id
     x: newPlayer.x
     y: newPlayer.y
     angle: newPlayer.angle
     torch: newPlayer.torch
-
+    dead: false
   i = undefined
   existingPlayer = undefined
   i = 0
@@ -82,7 +83,7 @@ onNewPlayer = (data) ->
       y: existingPlayer.y
       angle: existingPlayer.angle
       torch: existingPlayer.torch
-
+      dead: existingPlayer.id of dead_players
     i++
   players.push newPlayer
   return
@@ -115,16 +116,15 @@ playerById = (id) ->
     i++
   false
 
-
 onNewBullet = (data) ->
   #console.log "new bullet"
   @broadcast.emit "new bullet", data
   return
 
 onPlayerDead = (data) ->
-  console.log "player dead: " + data.id
-  @broadcast.emit "player dead: ", data
-  return
+  util.log "Dead player added to dead_players " + data.id
+  dead_players[data.id] = true
+  @broadcast.emit "player dead", data
 
 init = ->
   players = []

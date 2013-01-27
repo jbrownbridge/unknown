@@ -126,6 +126,7 @@ class Bullet extends Entity
     Engine.context.closePath()
     Engine.context.fill()
     return
+
   tick: (delta, camera) ->
     @dx = @speed * Math.sin(@angle - 36.1)
     @dy = @speed * Math.cos(@angle - 36.1)
@@ -196,7 +197,7 @@ class Player extends Entity
   alive: true
   spriteIndex: 0
   
-  constructor: (@x, @y, @angle, @torch) ->
+  constructor: (@x, @y, @angle, @torch, @alive) ->
     @type = Entity.types.Player
     @newX = @x
     @newY = @y
@@ -213,6 +214,9 @@ class Player extends Entity
       roughness: 0.7,
       distance: 150
     })
+    unless @alive
+      console.log("Creating dead player")
+      @killPlayer()
 
   updateLamp: (camera) ->
     p = new b2Vec2(-camera.x + @x + @width/2, -camera.y + @y + @height/2)
@@ -224,6 +228,7 @@ class Player extends Entity
     @dy = 0
     @alive = false
     @image = @imageDead
+    @health = 0
     console.log 'player been illiminated'
     return
 
@@ -427,7 +432,7 @@ class Map
           @tiles[x][y] = Map.tileTypes.SPAWN
         else if map[y].charAt(x) is "P"
           @tiles[x][y] = Map.tileTypes.PLAYER
-          @player = new Player(x * @tileSize, y * @tileSize, 0, true)
+          @player = new Player(x * @tileSize, y * @tileSize, 0, true, true)
           @entities.push @player
         else
           console.log 'unkonwn tile type at ' + x + ', ' + y
@@ -521,16 +526,29 @@ class Map
 
   updateIlluminatedScene: ->
     @lights = []
-    if @player.torch
+    if @player.torch or not @player.alive
       @player.updateLamp(@camera)
+      unless @player.alive
+        @player.lamp.angle = old_angle
+        @player.lamp.distance = 50
+        @player.lamp.roughness = 0
+        @player.lamp.color = "rgb(255,0,0)"
       @lights.push(@player.lamp)
-    i = 0
-    while i < Engine.remotePlayers.length
-      entity = Engine.remotePlayers[i]
-      entity.updateLamp(@camera)
-      if entity.torch
-        @lights.push(entity.lamp)
-      i++
+    if @player.alive
+      i = 0
+      while i < Engine.remotePlayers.length
+        entity = Engine.remotePlayers[i]
+        if entity.type is Entity.types.Player
+          if entity.torch or not entity.alive
+            old_angle = entity.angle
+            entity.updateLamp(@camera)
+            if not entity.alive
+              entity.lamp.angle = old_angle
+              entity.lamp.distance = 50
+              entity.lamp.roughness = 0
+              entity.lamp.color = "rgb(255,0,0)"
+            @lights.push(entity.lamp)
+        i++
     @darkmask.lights = @lights
     @darkmask.compute(@ctx.canvas.width, @ctx.canvas.height)
 
@@ -646,17 +664,27 @@ class NetworkClient
       torch: Engine.map.player.torch
     return
 
+  onClientId: (data) =>
+    console.log "got my client id " + data.id
+    Engine.map.player.id = data.id
+
   onSocketDisconnect: =>
     console.log "disconnected from server"
     return
 
   onPlayerDead: (data) =>
-    console.log "player dead: " + data.id
-    return
+    console.log "got dead player message " + data.id
+    player = @playerById(data.id)
+    unless player
+      if data.id == Engine.map.player.id
+        player = Engine.map.player
+      else
+        return
+    player.killPlayer()
 
   onNewPlayer: (data) =>
     console.log "new player connected: " + data.id
-    player = new Player(data.x, data.y, data.angle, data.torch)
+    player = new Player(data.x, data.y, data.angle, data.torch, not data.dead)
     player.id = data.id
     Engine.remotePlayers.push player
     return
@@ -778,6 +806,7 @@ class Engine
     Engine.socket.on "remove player", @networkClient.onRemovePlayer
     Engine.socket.on "new bullet", @networkClient.onNewBullet
     Engine.socket.on "player dead", @networkClient.onPlayerDead
+    Engine.socket.on "client id", @networkClient.onClientId
     return
 
   # init engine with starting values and trugger animation frame callback
