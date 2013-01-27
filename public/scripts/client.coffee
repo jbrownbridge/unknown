@@ -220,6 +220,7 @@ class Player extends Entity
   health: 100
   alive: true
   spriteIndex: 0
+  chestTick: 0
   
   constructor: (@x, @y, @angle, @torch, @alive) ->
     @type = Entity.types.Player
@@ -235,8 +236,8 @@ class Player extends Entity
       color: "rgba(0,0,0,0)"
       radius: 0,
       samples: 1,
-      roughness: 0.7,
-      distance: 160
+      roughness: 0.85,
+      distance: 175
     })
     unless @alive
       console.log("Creating dead player")
@@ -290,6 +291,7 @@ class Player extends Entity
     else
       @dy = 0
  
+    # space
     if Engine.input.keys[32] and @torchTick == 0
       @torch = not @torch
       @torchTick += 1
@@ -298,6 +300,21 @@ class Player extends Entity
       @torchTick += 1
     else if @torchTick >= 10
       @torchTick = 0
+
+    # e = open chest, e again = take chest item
+    if @onChest and Engine.input.keys[69] and @chestTick > 10
+      @chestTick = 1
+      if @chest.chestStatus is Chest.chestStatusTypes.CLOSED
+        @chest.chestStatus = Chest.chestStatusTypes.OPEN
+      else if @chest.chestStatus is Chest.chestStatusTypes.OPEN
+        @chest.takeShitOut()
+        if @chest.content is Chest.contentTypes.MACHINE_GUN
+          @gun = new MachineGun()
+        else if @chest.content is Chest.contentTypes.ROCKET_LAUNCHER
+          @gun = new RocketLauncher()
+        @chest.chestStatus = Chest.chestStatusTypes.EMPTY
+      # don't do anything for empty chests
+    @chestTick++
 
     #if Engine.input.keys[80]  
 
@@ -344,23 +361,51 @@ class Chest extends Entity
   @imageOpen.src = "/images/sprites/Chest_Open.png"
   @imageClosed = new Image()
   @imageClosed.src = "/images/sprites/Chest_Closed.png"
-  @statusTypes: {
+  @chestStatusTypes: {
     OPEN: 1,
-    CLOSED: 2
+    CLOSED: 2,
+    EMPTY: 3
   }
-  chestType: undefined
+  @contentTypes: {
+    MACHINE_GUN: 1,
+    ROCKET_LAUNCHER: 2
+  }
+  @contentTypeImages = []
+  @imageMachineGun = new Image()
+  @imageMachineGun.src = "/images/sprites/machine_gun.png"
+  @imageRocketLauncher = new Image()
+  @imageRocketLauncher.src = "/images/sprites/Rocket_launcher.png"
+  content: undefined
+  chestStatus: undefined
   image: undefined
+  ticks: 0
+  # 1 minute to refresh
+  refreshTicks: 600
   constructor: (@x, @y) ->
     @type = Entity.types.Chest
-    @image = Chest.imageClosed
-    @chestType = Chest.statusTypes.CLOSED
     @width = 64
     @height = 64
-
-    console.log @type
+    @refreshChest()
+  refreshChest: ->
+    @content = Math.floor((Math.random()*2)+1)
+    @chestStatus = Chest.chestStatusTypes.CLOSED
+    @ticks = 0 
+  takeShitOut: ->
+    @ticks = 0
+  tick: ->
+    @ticks++
+    if @ticks > @refreshTicks
+      @refreshChest()
   render: (camera) ->
-    Engine.context.drawImage @image, -camera.x + @x, -camera.y + @y
-    #Engine.context.fillText "chest", -camera.x + @x, -camera.y + @y
+    if @chestStatus is Chest.chestStatusTypes.CLOSED
+      Engine.context.drawImage Chest.imageClosed, -camera.x + @x, -camera.y + @y
+    else if @chestStatus is Chest.chestStatusTypes.OPEN or @chestStatus is Chest.chestStatusTypes.EMPTY
+      Engine.context.drawImage Chest.imageOpen, -camera.x + @x, -camera.y + @y
+      if @chestStatus is Chest.chestStatusTypes.OPEN
+        if @content is Chest.contentTypes.MACHINE_GUN
+          Engine.context.drawImage Chest.imageMachineGun, -camera.x + @x, -camera.y + @y
+        else if @content is Chest.contentTypes.ROCKET_LAUNCHER
+          Engine.context.drawImage Chest.imageRocketLauncher, -camera.x + @x, -camera.y + @y
     return
 
 class Map
@@ -489,7 +534,7 @@ class Map
         y++
       x++
     @lights = []
-    @darkmask = new DarkMask({ lights: @lights, color: 'rgba(0,0,0,1)'})
+    @darkmask = new DarkMask({ lights: @lights, color: 'rgba(0,0,0,0.925)'})
 
     #spawn player
     point = Math.floor(Math.random()*(@spawnPoints.length-1))
@@ -505,18 +550,18 @@ class Map
   checkEntityCollision:(e1, e2) ->
     return not ((e1.y + e1.height < e2.y) or (e1.y > e2.y + e2.height) or (e1.x > e2.x + e2.width) or (e1.x + e1.width < e2.x))
 
-  checkBulletCollisionWithAll: (entity) ->
+  checkCollisionWithAll: (entity) ->
     i = 0
     while i < Engine.remotePlayers.length
       if Engine.remotePlayers[i].alive and @checkEntityCollision entity, Engine.remotePlayers[i]
         if entity.type is Entity.types.Bullet
-          Engine.remotePlayers[i].damage Gun.guns[bullet.bulletType].damage
+          Engine.remotePlayers[i].damage Gun.guns[entity.bulletType].damage
           @removeEntity entity
       i++
 
     if Engine.map.player.alive and @checkEntityCollision entity, Engine.map.player
       if entity.type is Entity.types.Bullet
-        Engine.map.player.damage Gun.guns[bullet.bulletType].damage
+        Engine.map.player.damage Gun.guns[entity.bulletType].damage
         @removeEntity entity
       else if entity.type is Entity.types.Chest
         Engine.map.player.onChest = true
@@ -537,7 +582,7 @@ class Map
         @moveEntity @entities[i], @entities[i].x, @entities[i].y + @entities[i].newY, 0
         
         if @entities[i].type is Entity.types.Bullet or @entities[i].type is Entity.types.Chest
-          @checkBulletCollisionWithAll @entities[i]
+          @checkCollisionWithAll @entities[i]
       i++
     return
 
