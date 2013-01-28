@@ -1,47 +1,32 @@
 Attraction (alpha)
 =====
 
-A CoffeScript, HTML5, Canvas, Web Sockets, Node.js multiplayer puzzle platformer experiment. I am busy porting a puzzle platformer of mine to HTML5 and thought hey why not use CoffeeScript and then I thought why not using Web Sockets and make it multiplayer. As the game stands multiple players can join a server and see the other players moving around a 2D map with tile collision detection. The code has been converted to CoffeeScript using js2coffee and still needs a lot of porting to proper CoffeeScript classes. See the todo section below for things that need to be done.
+A CoffeScript, HTML5, Canvas, Web Sockets, Node.js multiplayer top dpwn survival shooter experiment. Most of the development took place during Global Game Jam 2013. Uses a peer to peer architecture.
 
-![screenshot](https://raw.github.com/SeanPackham/Attraction/master/public/images/Screen Shot 2012-12-20 at 2.58.17 PM.jpg)
+![screenshot](https://raw.github.com/SeanPackham/Attraction/master/public/images/Screen Shot 2013-01-28 at 11.04.03 AM.jpg)
 
 Running
 -----
 
-- Works best in latest Chrome, some versions of Firefox don't update at 60fps
-- Requires node, express, socket.io, coffee-script (install via npm)
-- Install dependencies with: npm install
-- On the server run: node web.js to start the server
-- Then open up [http://localhost:3000/index.html](http://localhost:3000/index.html) in Chrome
-- To compile the client code run: coffee -w -c ./ public/ game/ This will watch the file for any updates and automatically compile to JavaScript
-- Keys: (left), (right) and (A) to jump. Hold down (A) to jump higher. 
+- Works best in latest Chrome
+- Install node
+- run: npm install nodemon -g
+- run: npm install coffee-script -g
+- run in the project folder: npm install
+- run in the project folder in terminal 1: coffee -w -c ./ public/ game/
+- run in the project folder in terminal 2: node web.js
+- Then open up [http://localhost:3000/](http://localhost:3000/) in Chrome and enjoy
+- Keys: WASD, SPACE to turn torch off, E to open and take contents out of chests
+- Refresh browser when you die
 
 Todo
 -----
 
-- Send player input versus positions
-- Provide way to set player input update rate
-- Do all game logic on server
+- Refactor all the hackery that took place at GGJ13 :)
+- Use client-server architecture
+- Send player input versus positions to server
 - Latency compensation and interpolation
 - so so much more
-- ~~Rendering the player using an image~~
-- ~~Convert client code to use CoffeeScript classes~~
-- ~~Provide way for client to specify which server to connect too~~
-- ~~Use package files to list dependencies~~
-- ~~Host game static files using Node and Express (at the moment no web server)~~
-- ~~Convert server code to CoffeeScript~~
-- ~~Use Jade templates for client~~
-- ~~Provide way to specify server ip address on client~~
-
-Libraries
------
-
-- [JQuery](https://github.com/jquery/jquery)
-- [JQuery Hotkeys](https://github.com/tzuryby/jquery.hotkeys)
-- [Node](https://github.com/joyent/node)
-- [Socket.IO](https://github.com/LearnBoost/socket.io)
-- [CoffeeScript](https://github.com/jashkenas/coffee-script)
-- [Express](https://github.com/visionmedia/express)
 
 Contributions
 -----
