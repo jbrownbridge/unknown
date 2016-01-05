@@ -3,7 +3,7 @@ Attraction (alpha)
 
 A CoffeeScript, HTML5, Canvas, Web Sockets, Node.js multiplayer top down survival shooter experiment. Most of the development took place during Global Game Jam 2013. Uses a peer to peer architecture.
 
-![screenshot](https://raw.github.com/seanpackham/unknown/master/public/images/Screen Shot 2013-01-28 at 11.04.03 AM.jpg)
+![screenshot](https://raw.githubusercontent.com/jbrownbridge/unknown/master/public/images/Screen%20Shot%202013-01-28%20at%2011.04.03%20AM.jpg)
 
 Running
 -----
