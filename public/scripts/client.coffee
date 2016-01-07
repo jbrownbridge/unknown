@@ -1036,10 +1036,7 @@ class Engine
 
 # game entry point
 $(document).ready ->
-  Engine.socket = io.connect($(document).url,
-    port: 8000
-    transports: ["websocket"]
-  )
+  Engine.socket = io.connect()
 
   Engine.remotePlayers = []
   Engine.multiplayer = true
