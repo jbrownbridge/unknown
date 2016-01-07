@@ -5,6 +5,14 @@ A CoffeeScript, HTML5, Canvas, Web Sockets, Node.js multiplayer top down surviva
 
 ![screenshot](https://raw.githubusercontent.com/jbrownbridge/unknown/master/public/images/Screen%20Shot%202013-01-28%20at%2011.04.03%20AM.jpg)
 
+Playing
+-----
+
+- Works best in latest Chrome
+- Go to [https://unknown-ggj13.herokuapp.com/](https://unknown-ggj13.herokuapp.com/)
+- Keys: WASD, SPACE to turn torch off, E to open and take contents out of chests
+- Refresh to respawn
+
 Running
 -----
 
