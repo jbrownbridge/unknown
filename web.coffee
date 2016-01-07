@@ -24,7 +24,8 @@ app.configure "development", ->
 
 app.get "/", routes.index
 
-http.createServer(app).listen app.get("port"), ->
+server = http.createServer(app)
+server.listen app.get("port"), ->
   console.log "Express server listening on port " + app.get("port")
 
 
@@ -128,7 +129,7 @@ onPlayerDead = (data) ->
 
 init = ->
   players = []
-  socket = io.listen(8000)
+  socket = io.listen(server)
 
   socket.configure ->
     socket.set "transports", ["websocket"]
