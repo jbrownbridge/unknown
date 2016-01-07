@@ -1,1 +1,1 @@
-web: coffee web.coffee
+web: sh ./run.sh
